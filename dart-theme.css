@@ -1,0 +1,205 @@
+/* DART / independent football intelligence. Locally hosted typography. */
+:root{color-scheme:dark;--bg:#0c0c0b;--ink:#f0f0ef;--muted:#adadac;--green:#06bec4;--lime:#06bec4;--line:#323231;--digital:'Barlow Condensed',Inter,sans-serif;--mono:Inter,Arial,sans-serif}
+body{background:radial-gradient(ellipse at 88% 0%,#25252466,transparent 48%),linear-gradient(#06bec405 1px,transparent 1px),linear-gradient(90deg,#06bec405 1px,transparent 1px),#0c0c0b;background-size:auto,44px 44px,44px 44px,auto;color:var(--ink);font-family:Inter,Arial,sans-serif;line-height:1.65}
+body ::selection{background:#06bec4;color:#121211}
+body *{scrollbar-width:thin;scrollbar-color:#5f5f5e #1a1a19}
+body header{background:#0e0e0ded;border-bottom:1px solid #444443;box-shadow:0 1px 22px #06bec40a;padding:24px 5%;gap:24px}
+body .brand{font:800 27px var(--digital);letter-spacing:-1px;gap:18px;color:#06bec4;text-shadow:0 0 24px #06bec42a}
+body .brand>span{font:700 19px var(--digital);letter-spacing:1.2px;color:#f6f6f5}
+body .brand small{font:400 8px/1.7 var(--mono);letter-spacing:.4px;color:#b4b4b3;margin-top:7px;text-shadow:none}
+body .status{font:400 9px/1.6 var(--mono);color:#06bec4;letter-spacing:.5px;text-align:right}
+body main{padding-top:32px}
+body main>.eyebrow{color:#06bec4;font:400 10px var(--mono);letter-spacing:2px}
+body .intro{color:#c9c9c8;font-size:14px}
+body #loading{color:#969695;font:400 10px/1.8 var(--mono)}
+body h1,body h2,body h3{font-family:var(--digital);color:#f2f2f1;line-height:1.35;letter-spacing:-.5px}
+body h2{font-size:25px;font-weight:700}
+body h3{font-size:18px;font-weight:600}
+body .eyebrow{color:#06bec4;font:400 9px/1.7 var(--mono);letter-spacing:1.5px}
+body nav{background:#151514;border-color:#393938;box-shadow:0 10px 28px #0003;border-radius:7px;gap:26px;overflow-x:auto;white-space:nowrap}
+body nav button{font:400 10px var(--mono);letter-spacing:0;color:#b6b6b5;flex:none;background:transparent;padding:19px 0}
+body nav button.active{color:#06bec4;border-color:#06bec4;text-shadow:0 0 14px #06bec44d}
+body article{background:linear-gradient(135deg,#1c1c1b,#151514);border:1px solid #363635;border-radius:9px;box-shadow:0 8px 24px #0002}
+body .hubheading h2{font:700 30px/1.3 var(--digital);margin:9px 0}
+body .hubheading p,body .tiny,body label{color:#afafae}
+body .pill{background:#292928;border:1px solid #595958;color:#06bec4;border-radius:4px;font:400 9px/1.5 var(--mono);letter-spacing:.3px}
+body button{background:#06bec4;color:#141413}
+body button:hover{filter:brightness(1.1)}
+body button:focus-visible,body input:focus-visible,body select:focus-visible,body summary:focus-visible,body a:focus-visible{outline:2px solid #06bec4;outline-offset:4px}
+body .quiet{background:transparent;color:#06bec4}
+body .conferenceTabs button{background:#1c1c1b;border-color:#40403f;color:#c9c9c8;font:400 10px var(--mono);border-radius:4px}
+body .conferenceTabs button.active{background:#06bec4;border-color:#06bec4;color:#141413;box-shadow:0 0 18px #06bec41c}
+body .filters{background:#0f0f0e;border:1px solid #343433;border-radius:6px}
+body .filters label{color:#a3a3a2;font:400 9px var(--mono)}
+body input,body select,body .picker select{background:#1d1d1c;color:#ececeb;border-color:#494948;border-radius:4px}
+body input::placeholder{color:#a3a3a2}
+body .boardStats{gap:35px;border-bottom:1px solid #333332;padding-bottom:20px}
+body .boardStats b{font:600 32px var(--digital);color:#f1f1f0}
+body .boardStats span{color:#b3b3b2}
+body .conferenceheading{border-color:#494948;padding-bottom:14px}
+body .conferenceheading h3{font:700 22px var(--digital);color:#e5e5e4;letter-spacing:1px}
+body .conferenceheading span{font-family:var(--mono);color:#a9a9a8}
+body .gamecard{background:linear-gradient(145deg,#222221,#151514);color:#f0f0ef;border-color:#3e3e3d;border-top:2px solid #6f6f6e;box-shadow:0 4px 16px #0002;border-radius:7px}
+body .gamecard:hover{background:linear-gradient(145deg,#2c2c2b,#1c1c1b);border-color:#06bec4;box-shadow:0 0 22px #06bec415}
+body .cardtop{color:#b5b5b4}
+body .signalbadge{color:#06bec4;background:#2f2f2e;border:1px solid #474746}
+body .signalbadge.watch{background:#3b2b18;border-color:#6c4d27;color:#ffd296}
+body .teamlogo{background:#f3f3f2;border-radius:7px;padding:3px}
+body .cardteam strong{font:600 34px/1.15 var(--digital);color:#f8f8f7;letter-spacing:-1px}
+body .cardteam small{color:#a9a9a8}
+body .cardbottom{border-color:#3c3c3b;color:#b1b1b0}
+body .cardbottom b{font:600 16px var(--digital);color:#eaeae9}
+body .cardbottom em,body .historyshortcut{color:#06bec4}
+body .broadcastline{background:#141413;color:#d0d0cf;border:1px solid #3a3a39;border-radius:4px}
+body .broadcastline span{color:#9c9c9b}
+body .spreadrow{border-color:#40403f;background:#181817;color:#aeaead}
+body .spreadrow b{font-family:var(--mono);font-size:10px;color:#e3e3e2}
+body .upsetmeter,body .forecast .upsetmeter{background:#1d1d1c;color:#e4e4e3;border-color:#4f4f4e}
+body .upsetmeter.compact{background:transparent;border:0}
+body .compact .meterheading>span{color:#bdbdbc}
+body .meterheading>b{font:600 31px var(--digital);color:#06bec4}
+body .compact .meterheading>b{font-size:21px}
+body .metertrack,body .forecast .metertrack{background:#3b3b3a}
+body .metertrack>i{background:linear-gradient(90deg,#727271,#06bec4);box-shadow:0 0 12px #06bec444}
+body .meterticks,body .upsetmeter p,body .forecast .upsetmeter p{color:#b6b6b5}
+body .spotlightsection{background:linear-gradient(125deg,#212120,#171716);border-color:#474746;border-top:2px solid #06bec4;border-radius:7px}
+body .spotlightsection>.eyebrow{color:#06bec4}
+body .spotlightcard{border-top-color:#06bec4}
+body .spotlightrank{font:600 23px var(--digital);color:#c3c3c2;border-color:#3b3b3a}
+body .spotlightrank span{color:#babab9;font-size:8px}
+body .notice{background:#211d16;border-color:#57462b;color:#e0c59c}
+body .signal{border-color:#a0a09f}
+body .signal h3{font-size:17px}
+body .signal .tag{color:#06bec4}
+body .signal p,body #verdict,body .contextrow p,body .coverage p{color:#babab9}
+body .stormmeter{background:#242423;color:#d1d1d0;border:1px solid #424241}
+body .stormmeter b{font:600 23px var(--digital)}
+body .missing{color:#edbf88}
+body .forecast{background:radial-gradient(ellipse at top right,#3a3a3988,transparent 65%),#1b1b1a;border:1px solid #565655;border-top:3px solid #06bec4;box-shadow:0 0 30px #06bec408}
+body .forecast .eyebrow{color:#06bec4}
+body .score strong{font:700 clamp(44px,5vw,72px)/1.2 var(--digital);color:#f7f7f6;text-shadow:0 0 28px #06bec42b;letter-spacing:-2px}
+body .score .dash{color:#9e9e9d;font-family:var(--mono)}
+body .score small,body .forecast .tiny,body .forecast p{color:#bdbdbc}
+body .scorelogo .teamlogo{border-radius:10px;background:#f4f4f3}
+body .forecast .metrics,body .marketinfo{border-color:#4c4c4b}
+body .forecast .metrics b{font:600 28px var(--digital);color:#f2f2f1}
+body .forecast .metrics small,body .marketinfo small{color:#bbbbba}
+body .forecast button{background:#06bec4;color:#131312}
+body .forecast .track{background:#414140}
+body .historypanel{border-top-color:#06bec4}
+body .historypanel .eyebrow{color:#06bec4}
+body .odditiespanel{border-top-color:#06bec4}
+body .seriesstats{background:#171716;border-color:#3e3e3d}
+body .seriesstats b{font:600 27px var(--digital);color:#ebebea}
+body .seriesstats b.streak{font-size:19px}
+body .seriesstats small,body .seriesstats span{color:#aeaead}
+body .historyfilters button{background:#2a2a29;color:#c7c7c6;border:1px solid #484847}
+body .historyfilters button.active{background:#06bec4;color:#131312;border-color:#06bec4}
+body th,body .seriesTable th,body #comparison th,body #heldout th{background:#1e1e1d;color:#cbcbca;border-color:#464645;font-family:var(--mono);font-weight:400}
+body td{border-color:#393938;color:#dddddc}
+body tr:hover td{background:#06bec404}
+body a{color:#06bec4}
+body .historyteam>b{font:600 17px var(--digital)}
+body .empty{background:#1c1c1b;color:#c5c5c4;border:1px solid #454544}
+body .factnumber{font:600 26px var(--digital);color:#828281}
+body .factcard{border-color:#3a3a39}
+body .factcard .eyebrow{color:#06bec4}
+body .factcard h3{font-size:18px;line-height:1.5}
+body .factcard p,body #archive>article>p{color:#bebebd}
+body .factcard small{color:#a8a8a7}
+body .factsources a{color:#06bec4}
+body .plainstat{background:#1c1c1b;border-color:#474746}
+body .plainstat>small{color:#bcbcbb;font-family:var(--mono)}
+body .plainstat>b{font:600 42px var(--digital);color:#f2f2f1;line-height:1.4;letter-spacing:-1px}
+body .plainstat>b>span{font-size:23px;color:#babab9}
+body .plainstat>p,body .statcaption{color:#bcbcbb}
+body .technical{background:#171716;border-color:#414140;border-radius:5px}
+body .technical summary{color:#cececd}
+body .technical p,body details p,body #test article>p{color:#bdbdbc}
+body .resultbadge.right{background:#30302f;color:#8df3c6}
+body .resultbadge.wrong{background:#382027;color:#ffabb6}
+body #heldout td small{color:#aeaead}
+body #driverSummary p{border-color:#3e3e3d}
+body #driverSummary span{color:#b1b1b0}
+body .similarbox,body .patterncard{background:#1c1c1b;color:#e8e8e7;border-color:#444443}
+body .similarbox{border-left-color:#06bec4}
+body .cohortscore{font:600 32px var(--digital)}
+body .cohortgames a{color:#dcdcdb;border-color:#414140}
+body .cohortgames small{color:#adadac}
+body .patterncard h3{font-size:17px;line-height:1.5}
+body #modelAudit .resultcomparison{color:#c7c7c6}
+body footer{color:#9c9c9b;border-top:1px solid #3a3a39;padding-top:25px;font-family:var(--mono);letter-spacing:1px}
+/* The ticket board stylesheet loads separately; explicit scope preserves theme. */
+body #parlays .parlay-hero{background:radial-gradient(ellipse at 85% 10%,#4a4a4944,transparent 65%),#191918;border-color:#5a5a59;border-radius:9px}
+body #parlays .parlay-hero:after{border-color:#06bec4;opacity:.2}
+body #parlays .parlay-hero h2{font:700 clamp(30px,4vw,51px)/1.35 var(--digital);letter-spacing:-1px}
+body #parlays .parlay-hero h2 em,body #parlays .parlay-hero .eyebrow{color:#06bec4}
+body #parlays .parlay-hero p,body #parlays .parlay-week label{color:#c7c7c6}
+body #parlays .parlay-label{color:#d2d2d1;border-color:#5e5e5d;font-family:var(--mono);letter-spacing:0;font-size:9px}
+body #parlays .parlay-week select{background:#242423;color:#ececeb;border-color:#5c5c5b}
+body #parlays .parlay-stamp{color:#06bec4;border-color:#a9a9a8;border-radius:10px;transform:none;font:600 24px var(--digital);background:#06bec408;box-shadow:0 0 22px #06bec410}
+body #parlays .parlay-stamp small{font:400 8px var(--mono)}
+body #parlays .parlay-categories button{background:#1c1c1b;border-color:#434342;color:#dadad9;border-radius:5px}
+body #parlays .parlay-categories span{color:#b0b0af;font:400 8px/1.6 var(--mono);letter-spacing:.2px}
+body #parlays .parlay-categories b{font:600 12px/1.6 var(--digital)}
+body #parlays .parlay-categories .selected{background:#333332;border-color:#06bec4;color:#f5f5f4;box-shadow:0 3px 0 #06bec4,0 0 20px #06bec40a}
+body #parlays .parlay-categories .selected span{color:#e1e1e0}
+body #parlays .parlay-sectionhead h2{font-size:26px}
+body #parlays .parlay-sectionhead p,body #parlays .parlay-note{color:#b8b8b7}
+body #parlays .ticket{background:linear-gradient(145deg,#222221,#181817);border-color:#434342;border-radius:8px}
+body #parlays .ticket-top{background:#2a2a29;color:#cececd;font-family:var(--mono);font-size:9px;letter-spacing:.3px;border-bottom:1px solid #454544}
+body #parlays .ticket-top b{color:#06bec4}
+body #parlays .ticket-pay strong{color:#06bec4;font:600 32px var(--digital);letter-spacing:-1px}
+body #parlays .ticket-pay span{color:#b7b7b6}
+body #parlays .ticket-metrics b{font:400 20px var(--mono);color:#f1f1f0}
+body #parlays .ticket-metrics small{color:#bbbbba}
+body #parlays .ticket-risk{color:#e5b991;border-color:#4d4d4c}
+body #parlays .ticket-leg{border-color:#414140}
+body #parlays .ticket-team small{color:#06bec4;font-family:var(--mono)}
+body #parlays .ticket-team>span{background:#313130;color:#06bec4;border:1px solid #565655}
+body #parlays .ticket-leg p{color:#cececd}
+body #parlays .ticket-leg .ticket-match,body #parlays .ticket-leg summary{color:#b1b1b0}
+body #parlays .ticket-report{color:#06bec4;background:transparent}
+body #parlays .ticket-save{background:#06bec4;color:#141413}
+body #parlays .parlay-method{background:#1c1c1b;border-color:#424241}
+body #parlays button:focus-visible{outline-color:#06bec4}
+@media(max-width:800px){body .brand{font-size:24px;gap:12px}body .brand>span{font-size:17px}body nav{gap:19px}body nav button{font-size:10px}body .hubheading h2{font-size:25px}body .score strong{font-size:68px}}
+@media(max-width:560px){body header{padding:20px 4%}body .brand{font-size:22px;gap:12px}body .brand>span{font-size:15px;letter-spacing:.7px}body .brand small{font-size:7px;letter-spacing:0;max-width:220px}body h2{font-size:22px}body h3{font-size:17px}body .hubheading h2{font-size:24px}body article{padding:18px}body .boardStats{gap:19px}body .boardStats b{font-size:27px}body .cardteam strong{font-size:36px}body .plainstat>b{font-size:37px}body .score strong{font-size:62px}body #heldout tr{background:#1c1c1b;border-color:#424241}body #heldout td:first-child{border-color:#3e3e3d}body #heldout td:before{color:#b1b1b0}body .spotlightsection{padding:14px}body #parlays .parlay-hero{padding:23px}body #parlays .parlay-hero h2{font-size:29px}body #parlays .parlay-sectionhead h2{font-size:24px}body #parlays .ticket-pay strong{font-size:34px}body #parlays .ticket{padding:0}body #parlays .parlay-categories b{font-size:11px}}
+@media(prefers-reduced-motion:reduce){body *{scroll-behavior:auto!important;transition:none!important}}
+/* The supplied logo is displayed intact; its transparent canvas is framed in CSS. */
+body header .brand>.dart-logo-frame{display:block;position:relative;width:210px;aspect-ratio:1;overflow:hidden;margin-top:12px}
+body .dart-logo{display:block;position:absolute;width:156.772575%;max-width:none;height:auto;left:-29.197324%;top:-26.371237%}
+@media(max-width:560px){body header .brand>.dart-logo-frame{width:168px}}
+/* A centered editorial masthead, with restrained color and no ambient effects. */
+body{background:#111110;color:#eeeee8}
+body header.dart-masthead{display:flex;flex-direction:column;align-items:center;gap:0;max-width:1215px;margin:0 auto;padding:26px 0 0;background:transparent;box-shadow:none;border-bottom:1px solid #52524c;text-align:center}
+body .masthead-kicker{font:600 9px/1.5 Inter,sans-serif;letter-spacing:2.3px;color:#a5a59b}
+body header .brand{display:flex;flex-direction:column;gap:0;color:#eeeee8;text-shadow:none;margin:8px 0 22px}
+body header .brand>.dart-wordmark{font:800 clamp(100px,17vw,180px)/.95 'Barlow Condensed',sans-serif;letter-spacing:-6px;color:#eeeee8;display:flex;align-items:center;position:relative}
+body .dart-mark{font:500 .45em/1 Inter,sans-serif;letter-spacing:-3px;color:#06bec4;margin-left:8px;transform:translateY(-.08em)}
+body header .brand>.dart-subtitle{font:600 9px/1.5 Inter,sans-serif;letter-spacing:3px;color:#a5a59b;margin-top:13px}
+body .masthead-foot{display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid #343430;padding:12px 0;font:700 9px Inter,sans-serif;letter-spacing:1.5px;color:#d3d3c9}
+body header .status{display:block;font:500 9px Inter,sans-serif;color:#9d9d94;letter-spacing:1px}
+body main{padding-top:25px}
+body h2,body .hubheading h2{font-size:34px;font-weight:700;letter-spacing:0;line-height:1.05}
+body h3{font-size:24px;font-weight:700;letter-spacing:0}
+body nav{border-radius:0;background:transparent;box-shadow:none;border-top:1px solid #343430;border-bottom:1px solid #343430;gap:28px}
+body nav button{font:600 12px Inter,sans-serif;padding:18px 0}
+body nav button.active{text-shadow:none}
+body article,body .gamecard,body .spotlightsection,body .forecast,body #parlays .ticket,body #parlays .parlay-hero{background:#191918;box-shadow:none;border-radius:2px}
+body .gamecard:hover{background:#222220;box-shadow:none;border-color:#88887d}
+body .conferenceTabs button,body .conferenceTabs button.active{box-shadow:none;border-radius:2px;font-size:11px}
+body .conferenceheading h3{font-size:30px;letter-spacing:.5px;text-transform:uppercase}
+body .cardteam strong,body .boardStats b,body .meterheading>b,body .plainstat>b,body .score strong,body .forecast .metrics b,body #parlays .ticket-pay strong{font-family:Inter,Arial,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-1.5px;text-shadow:none}
+body .cardteam strong{font-size:32px}
+body .boardStats b{font-size:29px}
+body .metertrack>i{box-shadow:none;background:#06bec4}
+body .spotlightsection{border-top-color:#06bec4}
+body #parlays .parlay-hero:after{display:none}
+body #parlays .parlay-stamp{box-shadow:none;border-radius:2px;background:transparent}
+body #parlays .parlay-categories .selected{box-shadow:none}
+body #parlays .parlay-categories b{font:700 15px Inter,sans-serif}
+body #parlays .parlay-hero h2{font-size:clamp(38px,5vw,62px);line-height:1;letter-spacing:0}
+body .signal h3,body .factcard h3,body .patterncard h3{font-size:23px}
+@media(max-width:1300px){body header.dart-masthead{margin-inline:4%}}
+@media(max-width:560px){body header.dart-masthead{padding-top:22px}body .masthead-kicker{font-size:7px;letter-spacing:1.2px}body header .brand>.dart-wordmark{font-size:112px;letter-spacing:-4px}body header .brand>.dart-subtitle{font-size:7px;letter-spacing:1.4px}body .masthead-foot,body header .status{font-size:8px;letter-spacing:.6px}body nav{gap:23px}body nav button{font-size:11px}body h2,body .hubheading h2{font-size:30px}body .score strong{font-size:54px}body #parlays .parlay-categories b{font-size:12px}body #parlays .parlay-hero h2{font-size:39px}}
