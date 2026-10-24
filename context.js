@@ -10,8 +10,8 @@ function renderMatchupContext(f){
  const availabilityItems=[];
  for(const t of [g.away,g.home]){
   const availabilityGame=availabilityData.games?.[f.id];const a=availabilityGame?.[t===g.home?'home':'away'];if(!a)continue;
-  availabilityItems.push({title:name(t),text:a.summary||a.status||'Availability report',sourceUrl:a.sourceUrl,observedAt:a.observedAt});
-  for(const p of (a.concerns||a.players||a.items||[]))availabilityItems.push({title:p.name||p.title||'Player report',text:p.text||[p.position,p.status,p.detail,p.roleEvidence?'Center role verified by official team bio':null].filter(Boolean).join(' · '),sourceUrl:p.roleEvidence?.url||p.sourceUrl||a.sourceUrl,observedAt:p.observedAt||a.observedAt});
+  availabilityItems.push({title:name(t),text:(a.summary||a.status||'Availability report')+(a.reportPublished?' Report published '+a.reportPublished+'.':''),sourceUrl:a.sourceUrl,observedAt:a.retrievedAt});
+  for(const p of (a.concerns||a.players||a.items||[]))availabilityItems.push({title:p.name||p.title||'Player report',text:p.text||[p.position,p.status,p.detail,p.roleEvidence?'Center role verified by official team bio':null].filter(Boolean).join(' · '),sourceUrl:p.roleEvidence?.url||p.sourceUrl||a.sourceUrl,observedAt:a.retrievedAt});
  }
  if(availabilityItems.length)sections.injuries={...(sections.injuries||{}),summary:'Latest retrieved availability evidence. An omitted player is not automatically healthy. A listed lineman is not automatically a starter.',items:availabilityItems,sources:[...(availabilityData.games?.[f.id]?.home?.sources||[]),...(availabilityData.games?.[f.id]?.away?.sources||[])],status:'Reported availability'};
  if(!availabilityItems.length&&availabilityData.games?.[f.id]?.note)sections.injuries={...(sections.injuries||{}),status:'not_reported',summary:availabilityData.games[f.id].note};
