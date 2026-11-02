@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.current-cache/
+.context-cache/
+.environment-cache/
+.refresh-work/
+dist/
+refresh-failure.json
+
+.openai/

@@ -1,0 +1,11 @@
+const assert=require('node:assert/strict');
+const {health,weekEnd}=require('../live-updates.js');
+const now=Date.parse('2026-11-02T13:00:00Z');
+assert.equal(health({inputRetrievedAt:'2026-10-24T05:38:00Z'},now).stale,true);
+assert.equal(health({inputRetrievedAt:'2026-11-02T12:00:00Z'},now).stale,false);
+assert.equal(health({},now).stale,true);
+assert.equal(health({inputRetrievedAt:'2026-11-03T12:00:00Z'},now).stale,true);
+assert.equal(weekEnd('2026-11-02'),'2026-11-08');
+assert.equal(weekEnd('2026-11-08'),'2026-11-08');
+assert.equal(weekEnd('2026-12-31'),'2027-01-03');
+console.log('Freshness and rolling-week checks passed');
