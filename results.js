@@ -42,7 +42,7 @@ const DarkhorseResults = (() => {
     const days=rows.map(r=>easternDate(r.date)).sort();$('prCoverage').textContent=rows.length?`${rows.length} saved game${rows.length===1?'':'s'} · ${niceDate(days[0])}${days[0]===days.at(-1)?'':'–'+niceDate(days.at(-1))} · Dates in Eastern time`:'No saved games match these filters.';
     $('prUpsetRecord').textContent=`${up.win} outright wins · ${up.loss} misses from our underdog picks`;
     const wins=rows.filter(r=>r.pickedUnderdog&&r.upsetPickResult==='win');$('prUpsets').innerHTML=wins.length?wins.map(upsetCard).join(''):'<p class="pr-empty">No correct outright upset picks in this selection. An underdog covering the spread does not count here.</p>';
-    $('prLedgerTitle').textContent=`Every ${markets[market].toLowerCase()} pick`;
+    $('prLedgerTitle').textContent=market==='upset'?'Every outright upset pick':`Every ${markets[market].toLowerCase()} pick`;
     $('prGrading').textContent=`${descriptions[market]} ${c.push} pushes (line ties). ${c.no_pick} no-picks.${market==='spread'||market==='total'?' '+c.unavailable+' games had no saved line and are excluded from the record.':''}`;
     document.querySelectorAll('[data-pr-market]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.prMarket===market));b.onclick=()=>{market=b.dataset.prMarket;limit=12;render();};});
     ledger(rows);
