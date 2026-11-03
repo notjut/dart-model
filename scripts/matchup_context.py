@@ -3,7 +3,9 @@ Run --offline for deterministic rebuilds; --cache-dir selects historical summary
 """
 import argparse, collections, concurrent.futures, datetime as dt, json, os, pathlib, re, urllib.request
 from zoneinfo import ZoneInfo
+from coach_changes import confirmed_change
 ROOT=pathlib.Path(__file__).resolve().parents[1]
+COACH_EVENTS=json.loads((ROOT/'coach-change-events.json').read_text())['events']
 DIST=pathlib.Path(os.environ.get('DART_DATA_ROOT',str(ROOT/'dist' if (ROOT/'dist').is_dir() else ROOT)))
 BASE='https://site.api.espn.com/apis/site/v2/sports/football/college-football/'
 
@@ -92,7 +94,9 @@ def main():
     nxt=future[0];on=nxt['away'] if nxt['home']==t else nxt['home'];situ.append(item(name+' · next on the schedule',f"{teams[on]['name']} on {nxt['date'][:10]}. This identifies schedule context, not proof a team is distracted.",nxt['url'],D['retrievedAt']))
    roster,rost_at=rosters[t]; athletes={str(a['id']):a for group in roster.get('athletes',[]) for a in group.get('items',[])}
    coaches=roster.get('coach',[]);coach_names=[' '.join([a.get('firstName',''),a.get('lastName','')]).strip() for a in coaches]
-   if coach_names:coach_items.append(item(name+' · current coach',', '.join(coach_names)+'. Coach-versus-opponent records require a dated tenure history; no unbeaten claim is inferred.',f'https://www.espn.com/college-football/team/roster/_/id/{t}',rost_at))
+   change=confirmed_change(t,g['season'],D['asOf'],COACH_EVENTS)
+   if change:coach_items.append(item(name+' · current coach',change['interimCoach']+' — interim head coach, announced '+change['date']+'. The school announcement takes priority over an older roster listing of '+change['outgoingCoach']+'.',change['sourceUrl'],change['verifiedAt']))
+   elif coach_names:coach_items.append(item(name+' · current coach',', '.join(coach_names)+'. Coach-versus-opponent records require a dated tenure history; no unbeaten claim is inferred.',f'https://www.espn.com/college-football/team/roster/_/id/{t}',rost_at))
    for a in athletes.values():
     for injury in a.get('injuries',[]):
      status=injury.get('status') or injury.get('type',{}).get('description') or 'Status unspecified';details=injury.get('details',{});pos=a.get('position',{}).get('displayName','Position unspecified')

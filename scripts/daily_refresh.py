@@ -242,6 +242,7 @@ def run():
     validate_sources(data, old_data)
     write(work/'data.json', data)
     shutil.copy2(work/'current-game-details.json', work/'game-details.json')
+    execute('coach_changes.py')
     execute('model.py')
     model = read(work/'model.json')
     validate_forecasts(data, model, dt.datetime.now(UTC))
@@ -284,14 +285,14 @@ def run():
     status = {'runId': run_id, 'status': 'validated', 'dataAsOf': data['asOf'],
               'lastSuccessfulRefresh': dt.datetime.now(UTC).isoformat(), 'staleAfterHours': 30,
               'scheduleTeams': len(data['refresh']['scheduleTeamsRefreshed']), 'forecastGames': len(model['forecasts']),
-              'availability': availability['coverage'], 'sourceWarnings': availability['failures'] + context['fetchFailures'],
+              'availability': availability['coverage'], 'coachChangeTrial': model.get('coachChangeTrial'), 'sourceWarnings': availability['failures'] + context['fetchFailures'] + read(work/'coach-change-history.json')['fetchFailures'],
               'modelLimit': 'Player availability, QB starts and weather are displayed as evidence; their numerical effects have not been fitted. Reported QB concerns exclude a game from automated tickets.'}
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))
     # No repository data is replaced until the release passes the checks above.
     publish = ['data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
-               'matchup-environment.json', 'context-history-inputs.json', 'parlay-odds.json', 'daily-results.json', 'refresh-status.json']
+               'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'daily-results.json', 'refresh-status.json']
     for name in publish:
         read(work/name)  # Every output must exist and parse.
     for snap in [recovered, current]:

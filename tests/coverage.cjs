@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict');
+const {matchupCoverage}=require('../context.js');
+const game={home:'103',away:'52'},names=id=>({'103':'Boston College','52':'Florida State'}[id]);
+const c={sections:{qb:{items:[{team:'103',appearances:5,starterConfirmed:false},{team:'52',appearances:4,starterConfirmed:false}]}}};
+const text=matchupCoverage(game,c,{home:{status:'pending'},away:{status:'pending'}},names);
+assert.match(text,/pending for Florida State and Boston College/);
+assert.match(text,/QB statistics are loaded/);
+assert.doesNotMatch(text,/Official availability reports are loaded/);
+assert.match(matchupCoverage(game,{},{}),/No verified injury report/);
+const verified={sections:{qb:{items:[{team:'103',starterConfirmed:true},{team:'52',starterConfirmed:true}]}}};
+assert.match(matchupCoverage(game,verified,{home:{status:'reported'},away:{status:'reported'}},names),/Both starting QBs are confirmed/);
+assert.match(matchupCoverage(game,{sections:{qb:{items:[{title:'No verified usage'}]}}},{}),/Starting-QB information is not verified/);
+console.log('Matchup-specific availability and QB status checks passed');

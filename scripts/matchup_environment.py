@@ -3,7 +3,9 @@ Public sources only. These are descriptive evidence, never invented point bonuse
 """
 import concurrent.futures as cf, datetime as dt, hashlib, json, math, os, pathlib, urllib.parse, urllib.request
 from zoneinfo import ZoneInfo
+from coach_changes import confirmed_change
 R=pathlib.Path(__file__).resolve().parents[1]
+COACH_EVENTS=json.loads((R/'coach-change-events.json').read_text())['events']
 DATA=pathlib.Path(os.environ.get('DART_DATA_ROOT', str(R/'dist' if (R/'dist').exists() else R)))
 C=R/'.environment-cache';C.mkdir(exist_ok=True)
 LEGACY=pathlib.Path(os.environ.get('DART_HISTORY_CACHE','/workspace/sites/saturday-edge/.cache'))
@@ -120,13 +122,17 @@ def main():
    if isinstance(cs,dict):cs=[cs]
    names=[' '.join(filter(None,[c.get('firstName'),c.get('lastName')])) for c in cs]
    names=[n for n in names if n];coachmetrics[side]={'teamId':tid,'names':names,'ids':[c.get('id') for c in cs if c.get('id')]}
-   coaching.append(item(name+' coaching',('Roster-listed coach: '+', '.join(names)+'. ' if names else 'No coach identity returned by the current roster source. ')+'Coach-versus-school records and claimed motivational advantages require dated coaching history; no bonus is assigned.',cr['url'],cr['observedAt']))
-  out[gid]={'id':gid,'sections':{'weather':section(ws,summary,witems),'travel':section('calculated' if loc else 'partial','Approximate distance and body-clock time, not evidence of fatigue.',travels),'coaching':section('identified' if any('Roster-listed' in i['text'] for i in coaching) else 'unavailable','Current identities; no unsupported coaching or motivation bonus.',coaching)}}
+   change=confirmed_change(tid,g['season'],D['asOf'],COACH_EVENTS)
+   if change:
+    coachmetrics[side]={'teamId':tid,'names':[change['interimCoach']],'ids':[],'announcementDate':change['date'],'sourceUrl':change['sourceUrl']}
+    coaching.append(item(name+' coaching','School-announced interim coach: '+change['interimCoach']+' ('+change['date']+'). This replaces the previous coach identity; no automatic motivation bonus is assigned.',change['sourceUrl'],change['verifiedAt']))
+   else:coaching.append(item(name+' coaching',('Roster-listed coach: '+', '.join(names)+'. ' if names else 'No coach identity returned by the current roster source. ')+'Coach-versus-school records and claimed motivational advantages require dated coaching history; no bonus is assigned.',cr['url'],cr['observedAt']))
+  out[gid]={'id':gid,'sections':{'weather':section(ws,summary,witems),'travel':section('calculated' if loc else 'partial','Approximate distance and body-clock time, not evidence of fatigue.',travels),'coaching':section('identified' if any(v['names'] for v in coachmetrics.values()) else 'unavailable','Current identities; no unsupported coaching or motivation bonus.',coaching)}}
   out[gid]['sections']['weather']['metrics']={'indoorDesignated':roof,'hourly':vals,'units':wd.get('hourly_units',{}) if vals else {},'kickoff':g['date']}
   out[gid]['sections']['travel']['metrics']=travelmetrics
   out[gid]['sections']['coaching']['metrics']=coachmetrics
   for tm in travelmetrics.values():
    out[gid]['sections']['travel']['sources'].append({'label':tm['originCity']+' origin location','url':tm['originSourceUrl'],'observedAt':tm['originObservedAt']})
- payload={'generatedAt':STAMP,'games':out,'coverage':{'games':len(out),'weatherForecasts':sum(x['sections']['weather']['status']=='forecast' for x in out.values()),'travelCalculated':sum(x['sections']['travel']['status']=='calculated' for x in out.values()),'coachesIdentified':sum(x['sections']['coaching']['status']=='identified' for x in out.values())},'methodology':{'numericalImpact':'Context only; not fitted as a score adjustment.','travel':'Haversine city-center distance from most frequent non-neutral home venue in team schedule. Not route mileage or itinerary.','weather':'Open-Meteo hourly forecast for geocoded venue city; nearest UTC hour within 60 minutes. Future confirmed kickoffs only. Units supplied by API.','coaches':'Current ESPN roster-listed identities, not historical tenure or proof of head-to-head coaching advantage.','sources':['https://open-meteo.com/en/docs','https://open-meteo.com/en/docs/geocoding-api']}}
+ payload={'generatedAt':STAMP,'games':out,'coverage':{'games':len(out),'weatherForecasts':sum(x['sections']['weather']['status']=='forecast' for x in out.values()),'travelCalculated':sum(x['sections']['travel']['status']=='calculated' for x in out.values()),'coachesIdentified':sum(x['sections']['coaching']['status']=='identified' for x in out.values())},'methodology':{'numericalImpact':'Context only; not fitted as a score adjustment.','travel':'Haversine city-center distance from most frequent non-neutral home venue in team schedule. Not route mileage or itinerary.','weather':'Open-Meteo hourly forecast for geocoded venue city; nearest UTC hour within 60 minutes. Future confirmed kickoffs only. Units supplied by API.','coaches':'Dated school coaching announcements where verified, otherwise current ESPN roster identities. Firing history is a verified sample, not proof of a coaching advantage.','sources':['https://open-meteo.com/en/docs','https://open-meteo.com/en/docs/geocoding-api']}}
  (DATA/'matchup-environment.json').write_text(json.dumps(payload,separators=(',',':')));print(json.dumps(payload['coverage']),flush=True)
 if __name__=='__main__':main()
