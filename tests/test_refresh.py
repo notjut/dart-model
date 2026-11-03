@@ -49,6 +49,48 @@ class RefreshTests(unittest.TestCase):
         self.assertEqual(grade(4, 0), 'push')
         self.assertEqual(grade(0, 4), 'no_pick')
 
+    def test_upset_that_model_missed_is_not_an_upset_hit(self):
+        result = grade_snapshots([self.snap], {'games': [self.game]})
+        self.assertTrue(result['games'][0]['upset'])
+        self.assertFalse(result['games'][0]['pickedUnderdog'])
+        self.assertEqual(result['records']['upset']['win'], 0)
+
+    def test_underdog_cover_without_win_is_a_missed_upset(self):
+        self.forecast['coreMargin'] = 1
+        result = grade_snapshots([self.snap], {'games': [dict(self.game, hs=24, **{'as':27})]})
+        row = result['games'][0]
+        self.assertEqual((row['spread'], row['upsetPickResult']), ('win', 'loss'))
+        self.assertEqual(result['records']['upset'], {'win':0, 'loss':1, 'push':0})
+
+    def test_home_and_away_underdog_wins(self):
+        self.forecast['coreMargin'] = 1
+        self.assertEqual(grade_snapshots([self.snap], {'games':[self.game]})['records']['upset']['win'], 1)
+        self.forecast['coreMargin'] = -1
+        self.snap['quotes']['a']['homeSpread'] = -6.5
+        row = grade_snapshots([self.snap], {'games':[dict(self.game, hs=20, **{'as':30})]})['games'][0]
+        self.assertEqual((row['pickedTeam'],row['upsetPickResult']), ('OSU','win'))
+
+    def test_pickem_and_missing_line_cannot_define_an_upset_pick(self):
+        for line in [0, None]:
+            self.snap['quotes']['a']['homeSpread'] = line
+            row = grade_snapshots([self.snap], {'games':[self.game]})['games'][0]
+            self.assertFalse(row['pickedUnderdog'])
+            self.assertIsNone(row['explanation'])
+
+    def test_earlier_rescheduled_kickoff_blocks_late_pick(self):
+        self.snap['generatedAt'] = '2026-10-31T20:00:00Z'
+        result = grade_snapshots([self.snap], {'games':[dict(self.game,date='2026-10-31T17:00:00Z')]})
+        self.assertEqual(result['games'], [])
+
+    def test_explanation_uses_saved_main_model_not_experiment(self):
+        self.forecast.update(coreMargin=1, coreSd=10, coreIntercept=.5,
+                             coreContributions=[{'name':'Home field','points':.5}],
+                             contributions=[{'name':'Magic narrative','points':20}])
+        row = grade_snapshots([self.snap], {'games':[self.game]})['games'][0]
+        self.assertEqual(row['explanation']['drivers'], [{'factor':'home field','pointsTowardPick':.5}])
+        self.assertGreater(row['pickWinProbability'],.5)
+        self.assertIn('forecast-archive/',row['sourceArchive'])
+
     def test_incomplete_refresh_blocks_release(self):
         previous = {'teams': {'a': {'conference': 'SEC'}}, 'games': []}
         data = {'refresh': {'scheduleTeamsRefreshed': []}, 'failures': [], 'games': []}

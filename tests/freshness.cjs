@@ -9,3 +9,4 @@ assert.equal(weekEnd('2026-11-02'),'2026-11-08');
 assert.equal(weekEnd('2026-11-08'),'2026-11-08');
 assert.equal(weekEnd('2026-12-31'),'2027-01-03');
 console.log('Freshness and rolling-week checks passed');
+require('./results.cjs');

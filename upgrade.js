@@ -25,7 +25,7 @@ async function loadUpgrade(){
  try{
   const response=await fetch('model-upgrade.json');if(!response.ok)throw Error('Upgrade data unavailable');upgradeData=await response.json();
   await initialDataReady;
-  const daily=document.getElementById('dailyResults');if(daily)daily.insertAdjacentHTML('afterend',renderUpgradeResults(upgradeData));else document.getElementById('test').insertAdjacentHTML('afterbegin',renderUpgradeResults(upgradeData));
+  document.getElementById('method').insertAdjacentHTML('beforeend','<details class="technical"><summary>Experimental model comparisons</summary>'+renderUpgradeResults(upgradeData)+'</details>');
   document.getElementById('lab').insertAdjacentHTML('beforeend','<article id="upgradeMatch"></article>');
   renderUpgradeMatch(current);
  }catch(error){console.error(error)}

@@ -84,6 +84,65 @@ def grade(edge, actual):
     return 'win' if (edge > 0) == (actual > 0) else 'loss'
 
 
+def pick_explanation(f, g, picked, data):
+    """Explain saved model inputs separately from observed game outcomes."""
+    labels = {
+        'Elo difference': 'overall team strength',
+        'Net success-rate difference': 'sustaining drives and forcing stops',
+        'Scoring margin difference': 'earlier scoring margins',
+        'Scoring environment': 'the scoring patterns of the two teams',
+        'Home field': 'home field',
+        'Explosive-rate difference': 'big-play production',
+        'Yards/game difference': 'offensive yardage',
+    }
+    if not picked:
+        return {'pregame': 'The main forecast did not select a winner.', 'recap': [], 'drivers': []}
+    sign = 1 if picked == g['home'] else -1
+    team_name = lambda t: data.get('teams', {}).get(t, {}).get('name', t)
+    opponent = g['away'] if sign == 1 else g['home']
+    drivers = sorted([{'factor': labels.get(c['name'], c['name']),
+                       'pointsTowardPick': round(sign * c['points'], 2)}
+                      for c in f.get('coreContributions', [])],
+                     key=lambda c: c['pointsTowardPick'], reverse=True)
+    support = [c for c in drivers if c['pointsTowardPick'] >= .2][:2]
+    reasons = ' and '.join(c['factor'] for c in support)
+    margin = abs(f['coreMargin'])
+    lean = 'This was a very small lean' if margin < 1 else 'This was a close call' if margin < 3 else 'The saved forecast favored this team'
+    pregame = f'{lean}: {team_name(picked)} by {margin:.1f} points.'
+    pregame += f' The strongest supporting inputs were {reasons}.' if support else ' The starting value and combined inputs produced the pick; no strong individual advantage was saved.'
+    baseline = sign * f.get('coreIntercept', 0)
+    if baseline > max([c['pointsTowardPick'] for c in support] or [0]):
+        pregame += ' The model’s starting value also contributed more than any single supporting team statistic.'
+    stats = g.get('stats') or {}
+    a, b = stats.get(picked, {}), stats.get(opponent, {})
+    def number(side, key):
+        try:
+            return float(side.get('boxscore', {}).get(key, side.get(key)))
+        except (ValueError, TypeError):
+            return None
+    recap = []
+    ta, tb = number(a, 'turnovers'), number(b, 'turnovers')
+    if ta is not None and tb is not None and ta < tb:
+        recap.append(f'{team_name(picked)} gave the ball away {int(ta)} times; {team_name(opponent)} did so {int(tb)} times.')
+    ya, yb = number(a, 'totalYards'), number(b, 'totalYards')
+    if ya is not None and yb is not None and ya > yb:
+        recap.append(f'{team_name(picked)} gained {int(ya)} yards to {team_name(opponent)}’s {int(yb)}.')
+    try:
+        ca, aa = map(int, a['boxscore']['thirdDownEff'].split('-'))
+        cb, ab = map(int, b['boxscore']['thirdDownEff'].split('-'))
+        if aa and ab and ca / aa > cb / ab:
+            recap.append(f'{team_name(picked)} converted {ca} of {aa} third downs; {team_name(opponent)} converted {cb} of {ab}.')
+    except (KeyError, ValueError, ZeroDivisionError):
+        pass
+    recap = recap[:2]
+    if ya is not None and yb is not None and ya < yb:
+        recap.append(f'{team_name(picked)} was outgained {int(yb)}–{int(ya)}, so the win was not a clean sweep of the underlying stats.')
+    if not recap:
+        recap.append('The final score confirms the outcome. The saved box score does not provide enough evidence for a more specific game recap.')
+    return {'pregame': pregame, 'recap': recap, 'drivers': drivers,
+            'baselineTowardPick': round(baseline, 2), 'scope': 'Pregame reasons use only the saved main-model forecast. Game recap uses the final box score; it does not prove causation.'}
+
+
 def grade_snapshots(snapshots, data):
     selected = {}
     completed = {g['id']: g for g in data['games'] if g['done']}
@@ -91,16 +150,24 @@ def grade_snapshots(snapshots, data):
         for f in snap['forecasts']:
             g = completed.get(f['id'])
             original = snap['games'].get(f['id'])
-            if not g or not original or date(snap['generatedAt']) >= date(original['date']):
+            if not g or not original:
+                continue
+            kickoff = min(date(original['date']), date(g['date']))
+            if date(snap['generatedAt']) >= kickoff:
                 continue
             if original.get('done'):
                 continue
             q = snap['quotes'].get(f['id'], {})
             # Do not attach a closing or postgame line to an earlier prediction.
-            quote_ok = q.get('retrievedAt') and date(q['retrievedAt']) < date(original['date'])
+            quote_ok = q.get('retrievedAt') and date(q['retrievedAt']) < kickoff
             spread = q.get('homeSpread') if quote_ok else None
             total = q.get('overUnder') if quote_ok else None
             actual = g['hs'] - g['as']
+            picked = g['home'] if f['coreMargin'] > 0 else g['away'] if f['coreMargin'] < 0 else None
+            picked_underdog = bool(picked and spread not in (None, 0) and f['coreMargin'] * spread > 0)
+            explanation = pick_explanation(f, g, picked, data) if picked_underdog else None
+            sd = f.get('coreSd')
+            probability = .5 * (1 + math.erf(abs(f['coreMargin']) / (sd * math.sqrt(2)))) if sd and sd > 0 else None
             selected[g['id']] = {
                 'id': g['id'], 'date': g['date'], 'home': g['home'], 'away': g['away'],
                 'homeScore': g['hs'], 'awayScore': g['as'], 'forecastAt': snap['generatedAt'],
@@ -112,10 +179,16 @@ def grade_snapshots(snapshots, data):
                 'total': grade(f['coreTotal'] - total, g['hs'] + g['as'] - total) if total is not None else 'unavailable',
                 'homeUnderdog': spread > 0 if spread is not None else None,
                 'upset': grade(-spread, actual) == 'loss' if spread not in (None, 0) else None,
+                'pickedTeam': picked, 'pickedUnderdog': picked_underdog,
+                'pickWinProbability': probability, 'neutral': g.get('neutral', False),
+                'upsetPickResult': grade(f['coreMargin'], actual) if picked_underdog else 'not_picked',
+                'explanation': explanation, 'sourceUrl': g.get('url'), 'quoteProvider': q.get('provider') if quote_ok else None,
+                'sourceArchive': 'forecast-archive/' + snap.get('asOf', snap['generatedAt'][:10]) + '-' + hashlib.sha256(snap['generatedAt'].encode()).hexdigest()[:16] + '.json',
             }
     rows = sorted(selected.values(), key=lambda r: r['date'], reverse=True)
     counts = {k: {s: sum(r[k] == s for r in rows) for s in ['win', 'loss', 'push', 'no_pick', 'unavailable']}
               for k in ['winner', 'spread', 'total']}
+    counts['upset'] = {s: sum(r['upsetPickResult'] == s for r in rows) for s in ['win', 'loss', 'push']}
     return {'generatedAt': dt.datetime.now(UTC).isoformat(), 'games': rows, 'records': counts,
             'method': 'Latest saved forecast before kickoff, paired with a line retrieved before kickoff. Recovered legacy snapshots are identified. No reconstructed predictions are counted as issued picks.'}
 
