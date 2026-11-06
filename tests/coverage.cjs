@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const {matchupCoverage}=require('../context.js');
+const {matchupCoverage,supplementalInjuryText,supplementalPlayerText}=require('../context.js');
 const game={home:'103',away:'52'},names=id=>({'103':'Boston College','52':'Florida State'}[id]);
 const c={sections:{qb:{items:[{team:'103',appearances:5,starterConfirmed:false},{team:'52',appearances:4,starterConfirmed:false}]}}};
 const text=matchupCoverage(game,c,{home:{status:'pending'},away:{status:'pending'}},names);
@@ -11,3 +11,9 @@ const verified={sections:{qb:{items:[{team:'103',starterConfirmed:true},{team:'5
 assert.match(matchupCoverage(game,verified,{home:{status:'reported'},away:{status:'reported'}},names),/Both starting QBs are confirmed/);
 assert.match(matchupCoverage(game,{sections:{qb:{items:[{title:'No verified usage'}]}}},{}),/Starting-QB information is not verified/);
 console.log('Matchup-specific availability and QB status checks passed');
+assert.match(supplementalInjuryText({status:'checked',counts:{same_status:2,status_differs:1}},{status:'checked'}),/2 player statuses match.*1 differs; we keep the official status/);
+assert.match(supplementalInjuryText(null,{status:'checked'}),/No extra injuries are confirmed/);
+assert.match(supplementalInjuryText({status:'checked'},{status:'unavailable'}),/unavailable/);
+assert.match(supplementalPlayerText({status:'status_differs'}),/use the official status/);
+assert.equal(supplementalPlayerText({status:'not_listed'}),'');
+assert.equal(supplementalInjuryText(null,null),'');

@@ -1,5 +1,6 @@
 """Fail the workflow if Pages did not actually serve the new release."""
 import json
+import datetime as dt
 import os
 from pathlib import Path
 import time
@@ -17,6 +18,15 @@ for attempt in range(12):
             with urllib.request.urlopen(base+'/model.json?run='+expected, timeout=20) as response:
                 model = json.load(response)
             if model.get('refreshRunId') == expected:
+                retrieved = dt.datetime.fromisoformat(model['inputRetrievedAt'].replace('Z', '+00:00'))
+                age = dt.datetime.now(dt.timezone.utc) - retrieved
+                if not dt.timedelta(0) <= age < dt.timedelta(hours=30):
+                    raise ValueError('Published model inputs are not fresh')
+                with urllib.request.urlopen(base+'/availability.json?run='+expected, timeout=20) as response:
+                    availability = json.load(response)
+                supplemental = availability.get('supplementalCheck', {})
+                if supplemental.get('runId') != expected or supplemental != actual.get('supplementalInjuryCheck'):
+                    raise ValueError('Published injury check does not match this release')
                 print('Verified published release', expected)
                 break
     except Exception as error:

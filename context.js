@@ -16,7 +16,17 @@ function matchupCoverage(g,c={},a={},teamName=id=>id){
  parts.push('Injuries and QB changes do not yet change the projected score.');
  return parts.join(' ');
 }
-if(typeof module!=='undefined')module.exports={matchupCoverage};
+function supplementalInjuryText(check,overall){
+ if(!overall)return '';
+ if(overall.status!=='checked')return 'The SportsDataIO double-check is unavailable for this update. The official report below still controls player status.';
+ if(check?.status!=='checked')return 'SportsDataIO was checked, but no fresh official report could be matched for this team and game. No extra injuries are confirmed.';
+ const c=check.counts||{},same=c.same_status||0,different=c.status_differs||0;
+ return `SportsDataIO double-check: ${same} player status${same===1?' matches':'es match'} the official report. ${different?`${different} ${different===1?'differs':'differ'}; we keep the official status and flag ${different===1?'it':'them'} below.`:'No conflicting status was found among the comparable matches.'} Players missing from that feed are not assumed healthy. Reports may have been updated at different times.`;
+}
+function supplementalPlayerText(check){
+ return ({same_status:'SportsDataIO lists the same status',status_differs:'Sources differ — use the official status shown here and check again before kickoff',ambiguous_match:'Second-source player match is uncertain',not_comparable:'Second-source status could not be compared'})[check?.status]||'';
+}
+if(typeof module!=='undefined')module.exports={matchupCoverage,supplementalInjuryText,supplementalPlayerText};
 function contextSource(s){const url=s.url||s.sourceUrl;return url&&/^https?:\/\//.test(url)?`<a href="${esc(url)}" target="_blank" rel="noreferrer">${esc(s.label||'Source')}</a>`:''}
 function coachRecord(r){return `${r.wins}–${r.losses}${r.ties?'–'+r.ties:''}`;}
 function coachHistoryHTML(history,rows){
@@ -46,10 +56,16 @@ function renderMatchupContext(f){
  for(const t of [g.away,g.home]){
   const availabilityGame=availabilityData.games?.[f.id];const a=availabilityGame?.[t===g.home?'home':'away'];if(!a)continue;
   availabilityItems.push({title:name(t),text:(a.summary||a.status||'Availability report')+(a.reportPublished?' Report published '+a.reportPublished+'.':''),sourceUrl:a.sourceUrl,observedAt:a.retrievedAt});
-  for(const p of (a.concerns||a.players||a.items||[]))availabilityItems.push({title:p.name||p.title||'Player report',text:p.text||[p.position,p.status,p.detail,p.roleEvidence?'Center role verified by official team bio':null].filter(Boolean).join(' · '),sourceUrl:p.roleEvidence?.url||p.sourceUrl||a.sourceUrl,observedAt:a.retrievedAt});
+  const secondSource=supplementalInjuryText(a.supplementalCheck,availabilityData.supplementalCheck);
+  if(secondSource)availabilityItems.push({title:`${name(t)} · injury double-check`,text:secondSource,sourceUrl:availabilityData.supplementalCheck?.sourceUrl,observedAt:availabilityData.supplementalCheck?.checkedAt});
+  const players=(a.concerns||a.players||a.items||[]).slice();
+  // Include conflicts for officially available players too, without changing their status.
+  for(const p of a.players||[])if(p.supplementalCheck?.status==='status_differs'&&!players.some(x=>x.name===p.name))players.push(p);
+  for(const p of players)availabilityItems.push({title:p.name||p.title||'Player report',text:[p.text||[p.position,p.status,p.detail,p.roleEvidence?'Center role verified by official team bio':null].filter(Boolean).join(' · '),supplementalPlayerText(p.supplementalCheck)].filter(Boolean).join('. '),sourceUrl:p.roleEvidence?.url||p.sourceUrl||a.sourceUrl,observedAt:a.retrievedAt});
  }
  if(availabilityItems.length)sections.injuries={...(sections.injuries||{}),summary:'Latest retrieved availability evidence. An omitted player is not automatically healthy. A listed lineman is not automatically a starter.',items:availabilityItems,sources:[...(availabilityData.games?.[f.id]?.home?.sources||[]),...(availabilityData.games?.[f.id]?.away?.sources||[])],status:availabilityData.games?.[f.id]?.status||'unverified'};
  if(!availabilityItems.length&&availabilityData.games?.[f.id]?.note)sections.injuries={...(sections.injuries||{}),status:'not_reported',summary:availabilityData.games[f.id].note};
+ if(!availabilityItems.length&&availabilityData.supplementalCheck)sections.injuries={...(sections.injuries||{}),items:[{title:'Injury double-check',text:supplementalInjuryText(null,availabilityData.supplementalCheck),sourceUrl:availabilityData.supplementalCheck.sourceUrl,observedAt:availabilityData.supplementalCheck.checkedAt}]};
  const times=[contextData.generatedAt,environmentData.generatedAt,availabilityData.generatedAt].filter(Boolean);
  document.getElementById('contextStatus').innerHTML=`<p class="tiny">${times.length?'Research retrieved '+esc(new Date(times.sort()[0]).toLocaleString('en-US',{timeZone:'America/New_York'}))+' ET':'Research not loaded'}. Main forecast uses results through ${esc(D.asOf)}. Historical evaluation remains frozen through ${esc(M.evaluationFrozenThrough||M.testEnd)}. <b>These are matchup facts and warning signs; no untested point bonuses are added.</b></p>`;
  node.innerHTML=Object.entries(contextLabels).map(([k,label])=>{const s=sections[k];if(!s)return `<section class="context-card"><h3>${label}</h3><p>No verified report retrieved for this matchup. This factor does not change the score.</p></section>`;return `<section class="context-card"><h3>${label}</h3><span class="pill">${esc(({available:'Data available',partial:'Partial coverage',unverified:'Not verified',reported:'Official report',not_reported:'Report not available',pending:'Report pending'})[s.status]||s.status||'Context only')}</span><p>${esc(s.summary||'')}</p>${(s.items||[]).map(i=>`<div class="context-item"><b>${esc(i.title||'')}</b><p>${esc(i.text||'')}</p>${contextSource(i)}${i.observedAt?` <small>Retrieved ${esc(new Date(i.observedAt).toLocaleDateString('en-US'))}</small>`:''}</div>`).join('')}${(s.sources||[]).length?`<details><summary>Sources & coverage</summary>${s.sources.map(contextSource).filter(Boolean).join(' · ')}</details>`:''}</section>`}).join('');

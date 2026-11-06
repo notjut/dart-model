@@ -256,6 +256,7 @@ def run():
     write(work/'model.json', model)
     execute('matchup_context.py', '--data-file', 'data.json')
     execute('availability.py')
+    execute('sportsdataio_check.py')
     execute('matchup_environment.py')
     availability = read(work/'availability.json')
     for f in model['forecasts']:
@@ -286,7 +287,7 @@ def run():
     status = {'runId': run_id, 'status': 'validated', 'dataAsOf': data['asOf'],
               'lastSuccessfulRefresh': dt.datetime.now(UTC).isoformat(), 'staleAfterHours': 30,
               'scheduleTeams': len(data['refresh']['scheduleTeamsRefreshed']), 'forecastGames': len(model['forecasts']),
-              'availability': availability['coverage'], 'coachChangeTrial': model.get('coachChangeTrial'), 'sourceWarnings': availability['failures'] + context['fetchFailures'] + read(work/'coach-change-history.json')['fetchFailures'],
+              'availability': availability['coverage'], 'supplementalInjuryCheck': availability['supplementalCheck'], 'coachChangeTrial': model.get('coachChangeTrial'), 'sourceWarnings': availability['failures'] + context['fetchFailures'] + read(work/'coach-change-history.json')['fetchFailures'],
               'modelLimit': 'Player availability, QB starts and weather are displayed as evidence; their numerical effects have not been fitted. Reported QB concerns exclude a game from automated tickets.'}
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))

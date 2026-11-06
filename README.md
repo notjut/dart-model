@@ -33,3 +33,36 @@ actual combined SGP prices are not implemented. The sportsbook must confirm
 player eligibility, allowed combinations and combined payout. No bets are placed.
 
 Validation: `node tests/test_sniper.cjs`; Python syntax checks and browser preview.
+
+### SportsDataIO supplemental injury checks
+
+The existing daily refresh now runs `scripts/sportsdataio_check.py` immediately
+after fetching official availability reports. Its Actions secret is
+`SPORTSDATAIOAPIKEY` (the underscored alias `SPORTSDATAIO_API_KEY` also works).
+Only the current InjuredPlayers and Teams endpoints are requested: two requests
+per successful refresh, with one retry for a transient failure. No historical
+or paid-plan upgrade is requested. Authentication stays in the request header;
+redirects are refused and response bodies never enter logs.
+
+This is a supplemental trial check. Team and player names must match exactly
+after normalization; duplicate identities or incompatible positions are not
+guessed. A report must be published, retrieved within 30 hours, published within
+7 days, and match that game's date within the next 7 days. Unmatched names and
+trial-only injury diagnoses/statuses are never published. Missing rows do not
+mean healthy. Official statuses and verified center roles are never overwritten.
+
+Matchup availability cards show matching statuses and disagreements in plain
+language. The public `availability.json` and `refresh-status.json` contain the
+same supplemental check run ID, check timestamp and aggregate counts (including
+QB, center, OL and DL comparisons). Counts are player-report comparisons, not
+unique players or an accuracy score. Provider failures remain visible without
+discarding fresh official reports. The next refresh retries normally.
+
+No injury point penalties, confirmed starters, historical injury histories or
+new confidence percentages are inferred. Existing official QB concerns continue
+to flag games for review and exclude them from automated tickets. Trial numeric
+stats/odds are not used. Production redistribution rights and historical coverage
+must be confirmed with SportsDataIO before broadening this use.
+
+Validation: `python -m unittest discover -s tests -p 'test_*.py'` and
+`node tests/freshness.cjs`.
