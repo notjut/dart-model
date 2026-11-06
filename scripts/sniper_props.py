@@ -8,6 +8,7 @@ from pathlib import Path
 import statistics
 import urllib.request
 import urllib.parse
+import urllib.error
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = Path(os.environ.get('DART_DATA_ROOT', ROOT))
@@ -16,6 +17,21 @@ MARKETS = {'player_pass_yds': ('passing', 'passingYards', 'Passing yards'), 'pla
 def get(url):
     with urllib.request.urlopen(url, timeout=25) as r:
         return json.load(r)
+def provider_error(exc):
+    """Only publish known error codes; authenticated URLs and messages stay private."""
+    status = exc.code if isinstance(exc, urllib.error.HTTPError) else None
+    code = 'NETWORK_ERROR' if isinstance(exc, (urllib.error.URLError, TimeoutError)) else 'RESPONSE_ERROR'
+    if isinstance(exc, urllib.error.HTTPError):
+        code = 'HTTP_ERROR'
+        try:
+            payload = json.loads(exc.read(8192))
+            candidate = payload.get('error_code') if isinstance(payload, dict) else None
+            if candidate in {'MISSING_KEY', 'INVALID_KEY', 'DEACTIVATED_KEY', 'EXCEEDED_FREQ_LIMIT', 'OUT_OF_USAGE_CREDITS', 'MISSING_REGION', 'INVALID_REGION', 'INVALID_BOOKMAKERS', 'MISSING_MARKET', 'INVALID_MARKET', 'INVALID_MARKET_COMBO', 'INVALID_SPORT', 'UNKNOWN_SPORT', 'INVALID_EVENT_ID', 'EVENT_NOT_FOUND'}:
+                code = candidate
+        except Exception:
+            pass
+    return {'code': code, 'httpStatus': status}
+
 def number(value):
     try:
         value = float(value)
@@ -105,7 +121,7 @@ def main():
         players.sort(key=lambda p:(p['team'],p['market'],-p['projection']))
         result['games'].append({'id':g['id'],'date':g['date'],'home':g['home'],'away':g['away'],'reviewRequired':f.get('reviewRequired',False),'players':players})
     result['games'].sort(key=lambda g:g['date'])
-    api=os.environ.get('ODDS_API_KEY')
+    api=(os.environ.get('ODDS_API_KEY') or '').strip()
     if api:
         try:
             base='https://api.the-odds-api.com/v4/sports/americanfootball_ncaaf/events'
@@ -123,8 +139,10 @@ def main():
                             matches=[p for p in match['players'] if p['market']==market['key'] and norm(p['name'])==norm(outcome.get('description',''))]
                             if len(matches)!=1 or outcome.get('name') not in ('Over','Under') or not isinstance(outcome.get('point'),(int,float)): continue
                             matches[0]['quotes'].append({'book':book['title'],'bookKey':book['key'],'side':outcome['name'],'line':outcome['point'],'odds':outcome['price'],'updatedAt':market.get('last_update',book.get('last_update'))})
-        except Exception:
+        except Exception as exc:
             result['lineStatus']='provider_error'
+            result['providerError']=provider_error(exc)
+            print('Sniper provider status:', json.dumps(result['providerError']))
             # Never expose authenticated request URLs or exception messages.
     (OUT/'sniper-props.json').write_text(json.dumps(result,separators=(',',':'),allow_nan=False))
     print('Sniper Sauce:',len(result['games']),'games;',sum(len(g['players']) for g in result['games']),'player markets; lines:',result['lineStatus'])
