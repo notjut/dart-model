@@ -20,3 +20,7 @@
 .matchup-brief details[open] > summary { margin-bottom: .6rem; }
 .matchup-brief summary:focus-visible { outline: 2px solid #85f3d2; outline-offset: 5px; }
 @media (max-width:600px) { .brief-risks { padding: 1rem; } .brief-fact { padding-left: 1rem; } .brief-fact > strong { font-size: 1.05rem; } }
+.upset-research{margin-top:1.5rem;padding:1.2rem;border:1px solid #427868;border-radius:12px;background:rgba(64,138,111,.07)}
+.upset-research h4{margin:.6rem 0}.upset-research details{margin-top:1rem}.upset-research summary{cursor:pointer;line-height:1.5}.upset-research li{margin:.65rem 0}.upset-research a{overflow-wrap:anywhere}
+.research-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1rem 0}.research-comparison div{padding:.8rem;border:1px solid #365348;border-radius:8px}.research-comparison small,.research-comparison strong{display:block}.research-comparison strong{font-size:1.15rem;margin-top:.5rem}
+@media(max-width:520px){.research-comparison{grid-template-columns:1fr}.upset-research{padding:1rem}}

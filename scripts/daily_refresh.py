@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from zoneinfo import ZoneInfo
+from upset_engine import apply as apply_upset_research, grade_trial
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -65,6 +66,17 @@ def validate_forecasts(data, model, now):
             raise ValueError('Nonfinite forecast')
         if min(f['coreSd'], f['sd']) <= 0:
             raise ValueError('Invalid forecast uncertainty')
+        trial = f.get('upsetResearch')
+        if trial and trial.get('status') == 'testing':
+            if trial.get('appliedToMain') is not False or trial['baselineHomeMargin'] != f['coreMargin']:
+                raise ValueError('Research forecast changed the main baseline')
+            if not all(math.isfinite(trial[k]) for k in ['candidateHomeMargin', 'candidateSd', 'candidateHomeWin']):
+                raise ValueError('Nonfinite research forecast')
+            if trial['candidateSd'] <= 0 or not 0 <= trial['candidateHomeWin'] <= 1:
+                raise ValueError('Invalid research uncertainty')
+            expected = f['coreMargin'] + sum(c['homeMarginPoints'] for c in trial['contributions'])
+            if abs(expected - trial['candidateHomeMargin']) > 1e-8:
+                raise ValueError('Research contributions do not match its forecast')
 
 
 def snapshot(data, model, quotes, recorded_at, recovered=False):
@@ -228,6 +240,8 @@ def run():
     seeds = ['data.json', 'model.json', 'game-details.json', 'history.json', 'research-notes.json', 'context-history-inputs.json']
     for name in seeds:
         shutil.copy2(ROOT/name, work/name)
+    if (ROOT/'upset-metric-history.json').exists():
+        shutil.copy2(ROOT/'upset-metric-history.json', work/'upset-metric-history.json')
     old_data, old_model, old_quotes = (read(work/n) for n in seeds[:3])
     env = dict(os.environ, DART_DATA_ROOT=str(work), DART_DATA_DIR=str(work),
                DART_MODEL_INPUT=str(work/'data.json'), DART_MODEL_OUTPUT=str(work/'model.json'),
@@ -246,6 +260,9 @@ def run():
     execute('model.py')
     model = read(work/'model.json')
     validate_forecasts(data, model, dt.datetime.now(UTC))
+    # Keep the full expanding-date errors for the new research fit before
+    # restoring the intentionally frozen public benchmark below.
+    research_heldout = model['heldout']
     # Keep the original benchmark immutable; current replay metrics are separate.
     replay = {k: model[k] for k in ['core', 'full', 'testedGames', 'testStart', 'testEnd']}
     for key in ['core', 'full', 'heldout', 'calibration', 'testedGames', 'testStart', 'testEnd']:
@@ -265,6 +282,11 @@ def run():
         f['availabilityStatus'] = row.get('status', 'not_reported')
         f['reviewRequired'] = bool(qb)
         f['lineupWatch'] = [p['name'] + ': ' + p['status'] for p in qb]
+    execute('upset_engine.py', '--collect')
+    frozen_heldout = model['heldout']
+    model['heldout'] = research_heldout
+    apply_upset_research(data, model, read(work/'upset-metric-history.json'), availability)
+    model['heldout'] = frozen_heldout
     write(work/'model.json', model)
     write(work/'parlay-odds.json', make_odds(work, model, data))
     execute('sniper_props.py')
@@ -283,18 +305,22 @@ def run():
     current = snapshot(data, model, read(work/'game-details.json'), dt.datetime.now(UTC).isoformat())
     snaps.append(current)
     write(work/'daily-results.json', grade_snapshots(snaps, data))
+    write(work/'upset-research-results.json', grade_trial(snaps, data))
     context = read(work/'matchup-context.json')
     status = {'runId': run_id, 'status': 'validated', 'dataAsOf': data['asOf'],
               'lastSuccessfulRefresh': dt.datetime.now(UTC).isoformat(), 'staleAfterHours': 30,
               'scheduleTeams': len(data['refresh']['scheduleTeamsRefreshed']), 'forecastGames': len(model['forecasts']),
               'availability': availability['coverage'], 'supplementalInjuryCheck': availability['supplementalCheck'], 'coachChangeTrial': model.get('coachChangeTrial'), 'sourceWarnings': availability['failures'] + context['fetchFailures'] + read(work/'coach-change-history.json')['fetchFailures'],
-              'modelLimit': 'Player availability, QB starts and weather are displayed as evidence; their numerical effects have not been fitted. Reported QB concerns exclude a game from automated tickets.'}
+              'upsetResearchTrial': model.get('upsetResearchTrial'),
+              'modelLimit': 'Protection, run resistance and touchdown drives now feed a separate experimental forecast. Main picks are unchanged. Starting roles, injury effects and weather are not fitted. Reported QB concerns exclude a game from automated tickets.'}
+
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))
     # No repository data is replaced until the release passes the checks above.
     publish = ['data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
-               'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json']
+               'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json',
+               'upset-metric-history.json', 'upset-research-results.json']
     for name in publish:
         read(work/name)  # Every output must exist and parse.
     for snap in [recovered, current]:

@@ -34,6 +34,33 @@ player eligibility, allowed combinations and combined payout. No bets are placed
 
 Validation: `node tests/test_sniper.cjs`; Python syntax checks and browser preview.
 
+### Upset research phase one
+
+The daily refresh collects regulation play-by-play into `upset-metric-history.json`.
+A separate experimental forecast tests protection (offensive sacks allowed ×
+opponent sack rate), run resistance (run share × opposing no-gain/loss rate),
+and offensive touchdowns per drive. `scripts/upset_engine.py` fits a ridge
+adjustment to earlier expanding-date core errors, with at least 60 training
+rows and no same-day outcomes. Main forecasts and automated tickets do not use it.
+
+Every game shows its source sample, test forecast and availability gaps. Official
+reports are matched to both teams and date, with verified publication/retrieval
+times. Reports do not identify starters. There are no injury, freshman, travel,
+crowd or letdown point bonuses. Verified starting-QB changes and line continuity
+remain an explicit data gap, rather than a fabricated adjustment. Sack rates are
+a pressure proxy; TDs per drive are not red-zone conversion. Rates are not separately
+opponent-adjusted; baseline team strength is retained.
+
+Candidate/base pairs and their features are archived before kickoff.
+`upset-research-results.json` grades only prospective snapshots actually recorded
+before kickoff and includes losses, Brier score, margin error and outright
+underdog selection records. Recovered snapshots and historical reconstructions
+are excluded. Historical replay is development evidence only; no automatic
+promotion or performance claim is permitted. Version changes must use a new
+experiment ID. Moneyline ROI is not calculated.
+
+Checks: `python -m unittest discover -s tests -p 'test_*.py'`,
+`node tests/test_upset_research.cjs`, and the existing frontend checks.
 ### SportsDataIO supplemental injury checks
 
 The existing daily refresh now runs `scripts/sportsdataio_check.py` immediately
