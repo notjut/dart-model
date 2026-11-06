@@ -13,3 +13,5 @@ require('./results.cjs');
 require('./seabiscuit.cjs');
 
 require('./coverage.cjs');
+
+require('./test_upset_research.cjs');
