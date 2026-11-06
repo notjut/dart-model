@@ -1,0 +1,16 @@
+const assert=require('node:assert/strict');
+const rankings=require('../team-rankings.js');
+const now=Date.now();
+const stamp=new Date(now-3600000).toISOString();
+const data={fpi:{status:'current',publishedAt:stamp,retrievedAt:stamp,ranks:{'1':6,'2':50}},cfp:{status:'current',publishedAt:stamp,retrievedAt:stamp,ranks:{'1':5}}};
+assert.match(rankings.badges('1',false,data,now),/FPI #6/);
+assert.match(rankings.badges('1',false,data,now),/CFP #5/);
+assert.doesNotMatch(rankings.badges('2',false,data,now),/CFP/);
+assert.match(rankings.badges('999',false,data,now),/FPI —/);
+assert.match(rankings.badges('1',true,data,now),/Current/);
+assert.match(rankings.badges('1',false,{},now),/CFP unavailable/);
+assert.match(rankings.badges('1',false,data,now+31*3600000),/older/);
+assert.match(rankings.legend(data),/playoff committee/);
+assert.match(rankings.legend(data),/team-strength rank/);
+assert.equal(rankings.text('1',data),'FPI #6 · CFP #5');
+console.log('Ranking source display, missing-data and stale-snapshot checks passed');

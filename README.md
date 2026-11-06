@@ -93,3 +93,11 @@ must be confirmed with SportsDataIO before broadening this use.
 
 Validation: `python -m unittest discover -s tests -p 'test_*.py'` and
 `node tests/freshness.cjs`.
+
+### Matchup rankings
+
+The existing daily refresh runs `scripts/team_rankings.py` to publish `team-rankings.json`. It retrieves ESPN’s published `fpirank` for each FBS team and the separate current-season `cfp` poll. It never substitutes AP or Coaches rankings. Team IDs, season, unique ranks, complete coverage and publication dates are checked. These rankings are display context; no forecast weights or historical picks are changed.
+
+FPI and CFP badges appear beside teams on the board, matchup reports, Picks & Parlays, Seabiscuit cards, Sniper Sauce, history and result cards. The shared legend links to ESPN and shows both publication dates. Historical results explicitly label these as **current** rankings, not game-day rankings. CFP badges appear only for the Top 25 when a complete poll is available. Failed refreshes retain the last checked snapshot marked “older,” with its original timestamp, or show unavailable. A browser snapshot checked more than 30 hours ago is also labeled older. Publication-age limits are seven days for FPI and fourteen days for the weekly CFP poll.
+
+The Pages verification checks the ranking run ID and coverage against the published refresh status. Tests run through the existing Python discovery and `node tests/freshness.cjs`.

@@ -27,6 +27,10 @@ for attempt in range(12):
                 supplemental = availability.get('supplementalCheck', {})
                 if supplemental.get('runId') != expected or supplemental != actual.get('supplementalInjuryCheck'):
                     raise ValueError('Published injury check does not match this release')
+                with urllib.request.urlopen(base+'/team-rankings.json?run='+expected, timeout=20) as response:
+                    rankings = json.load(response)
+                if rankings.get('runId') != expected or rankings.get('coverage') != actual.get('rankings'):
+                    raise ValueError('Published rankings do not match this release')
                 print('Verified published release', expected)
                 break
     except Exception as error:
