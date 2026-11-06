@@ -73,6 +73,7 @@ jobs:
       - name: Refresh data and rebuild forecasts
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY || secrets.ODDSAPIKEY }}
+          SPORTSDATAIO_API_KEY: ${{ secrets.SPORTSDATAIO_API_KEY || secrets.SPORTSDATAIOAPIKEY }}
         run: python scripts/daily_refresh.py
       - name: Preserve verified release and prediction archive
         run: |
