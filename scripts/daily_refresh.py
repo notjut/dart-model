@@ -266,6 +266,7 @@ def run():
         f['lineupWatch'] = [p['name'] + ': ' + p['status'] for p in qb]
     write(work/'model.json', model)
     write(work/'parlay-odds.json', make_odds(work, model, data))
+    execute('sniper_props.py')
     # Preserve all completed games in the history browser.
     history = read(work/'history.json')
     merged = {g['id']: g for g in history['games']}
@@ -292,7 +293,7 @@ def run():
     # No repository data is replaced until the release passes the checks above.
     publish = ['data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
-               'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'daily-results.json', 'refresh-status.json']
+               'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json']
     for name in publish:
         read(work/name)  # Every output must exist and parse.
     for snap in [recovered, current]:
