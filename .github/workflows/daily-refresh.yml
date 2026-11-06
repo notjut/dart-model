@@ -72,7 +72,7 @@ jobs:
           node tests/test_sniper.cjs
       - name: Refresh data and rebuild forecasts
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY || secrets.ODDSAPIKEY }}
         run: python scripts/daily_refresh.py
       - name: Preserve verified release and prediction archive
         run: |
@@ -122,3 +122,4 @@ jobs:
         env:
           DART_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
         run: python scripts/verify_deployment.py
+
