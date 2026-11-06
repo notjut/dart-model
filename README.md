@@ -14,6 +14,13 @@ that secret the site shows production projections, but no fabricated quotes or
 ticket suggestions. Quotes expire after six hours; the daily schedule does not
 provide continuous live odds.
 
+Sniper Sauce displays the provider’s sanitized error reason. `OUT_OF_USAGE_CREDITS`
+means The Odds API account needs its quota renewed or replenished; changing a
+stats-provider key does not resolve it. The per-game SGP control explains missing
+quotes, expired quotes, lineup review, insufficient history, the 60% historical
+leg screen, and pairing restrictions. Readiness is checked again on click.
+No fallback lines, probabilities or prices are invented to force a ticket.
+
 Projection v1 uses up to ten current-season recorded stat appearances (minimum
 four), and requires an appearance in one of the team's last two games. Missing
 stat rows are not zeros. Yard projections multiply the appearance average by
