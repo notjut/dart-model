@@ -1,0 +1,22 @@
+'use strict';
+(function(root){
+  const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const finite=x=>typeof x==='number'&&Number.isFinite(x);
+  const one=x=>finite(x)?x.toFixed(1):'Unknown';
+  const signed=x=>finite(x)?`${x>0?'+':''}${one(x)}`:'Unknown';
+  const margin=(x,h,a)=>!finite(x)?'Unavailable':Math.abs(x)<.05?'Even':`${esc(x>0?h:a)} by ${one(Math.abs(x))}`;
+  function match(f,h,a){
+    const r=f?.opponentAdjustment;
+    if(!r)return '';
+    if(!r.appliedToMain)return `<section class="upset-research"><div class="eyebrow">OPPONENT QUALITY</div><p>${esc(r.reason)}</p></section>`;
+    const home=r.home,away=r.away,gap=home.opponentStrength-away.opponentStrength;
+    const known=finite(home.opponentStrength)&&finite(away.opponentStrength);
+    const harder=gap>0?h:a;
+    return `<section class="upset-research opponent-card" aria-label="Opponent-adjusted forecast"><div class="eyebrow">WHO DID THEY PLAY? · INCLUDED IN THE MAIN PICK</div><h4>Production needs an opponent.</h4><p>${known?`${esc(harder)} faced the stronger FBS schedule in our scoring ratings—opponents rated ${one(Math.abs(gap))} points stronger on average.`:'Schedule strength cannot be compared yet.'} The main forecast adjusts scoring, drive efficiency, big plays and yardage for the offenses and defenses each team faced.</p><div class="research-comparison"><div><small>Before opponent adjustment</small><strong>${margin(r.unadjustedHomeMargin,h,a)}</strong></div><div><small>Current main forecast</small><strong>${margin(f.coreMargin,h,a)}</strong></div></div><div class="tablewrap"><table><thead><tr><th>Against an average FBS opponent</th><th>${esc(a)}</th><th>${esc(h)}</th></tr></thead><tbody><tr><td>Estimated points scored</td><td>${one(away.metrics.points.offense)}</td><td>${one(home.metrics.points.offense)}</td></tr><tr><td>Estimated points allowed</td><td>${one(away.metrics.points.defenseAllowed)}</td><td>${one(home.metrics.points.defenseAllowed)}</td></tr><tr><td>Average opponent strength*</td><td>${signed(away.opponentStrength)}</td><td>${signed(home.opponentStrength)}</td></tr><tr><td>FBS games included</td><td>${esc(away.games)}</td><td>${esc(home.games)}</td></tr></tbody></table></div><p class="tiny">These are adjusted ratings, not actual scoring averages. *Points above or below an average FBS team; positive means tougher opponents. Estimates use games before ${esc(r.cutoff)} and shrink small samples toward average.</p><details class="brief-receipt"><summary>Which games counted—and how?</summary><p>${esc(r.method)} The comparison also replaces the old rolling scoring window with current-season FBS performance. It is not an extra schedule bonus added on top of raw statistics.</p>${[[a,away],[h,home]].map(([name,p])=>`<h5>${esc(name)}</h5><ul>${p.sourceGames.map(g=>`<li>${/^https:\/\//.test(g.url||'')?`<a href="${esc(g.url)}" target="_blank" rel="noreferrer">`:''}${esc(g.date.slice(0,10))} · ${esc(name)} scored ${esc(g.points)} against ${esc(g.opponentName||g.opponent)}${/^https:\/\//.test(g.url||'')?'</a>':''}</li>`).join('')}</ul>`).join('')}</details></section>`;
+  }
+  function evaluation(e){
+    if(!e||!finite(e.games)||!e.unadjusted||!e.adjusted)return '';
+    return `<article class="upset-research"><div class="eyebrow">OPPONENT ADJUSTMENT · DEVELOPMENT REPLAY</div><h3>Does accounting for the schedule help?</h3><p>Both versions were rebuilt on the same ${esc(e.games)} games, using earlier dates for training. This is a reconstructed test, not a record of published picks.</p><div class="tablewrap"><table><tr><th>Measure</th><th>Before adjustment</th><th>Opponent-adjusted</th></tr><tr><td>Average margin error · lower is better</td><td>${e.unadjusted.marginMAE.toFixed(2)}</td><td>${e.adjusted.marginMAE.toFixed(2)}</td></tr><tr><td>Correct winners</td><td>${one(e.unadjusted.accuracy*100)}%</td><td>${one(e.adjusted.accuracy*100)}%</td></tr><tr><td>Probability error · lower is better</td><td>${e.unadjusted.brier.toFixed(3)}</td><td>${e.adjusted.brier.toFixed(3)}</td></tr></table></div><p>The adjustment makes the opponent comparison explicit. These results do not establish improved accuracy or betting profit. Saved picks above retain the model used when they were issued.</p></article>`;
+  }
+  const api={match,evaluation};root.DarkhorseOpponents=api;if(typeof module!=='undefined')module.exports=api;
+})(globalThis);
