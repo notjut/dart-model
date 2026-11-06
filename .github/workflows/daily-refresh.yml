@@ -68,13 +68,17 @@ jobs:
           node --check live-updates.js
           node --check parlays.js
           node --check darkhorse.js
+          node --check sniper.js
+          node tests/test_sniper.cjs
       - name: Refresh data and rebuild forecasts
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
         run: python scripts/daily_refresh.py
       - name: Preserve verified release and prediction archive
         run: |
           git config user.name 'Darkhorse refresh bot'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- '*.json' forecast-archive/ scripts/ tests/ '*.js' '*.css' index.html requirements.txt .gitignore UPDATE-STATUS.md
+          git add -A -- '*.json' forecast-archive/ scripts/ tests/ '*.js' '*.css' index.html requirements.txt .gitignore UPDATE-STATUS.md README.md
           if ! git diff --cached --quiet; then
             git commit -m 'Refresh Darkhorse data and preserve pregame forecasts'
             git push origin HEAD:main
