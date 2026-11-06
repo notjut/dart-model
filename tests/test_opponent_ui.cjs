@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const {match,evaluation}=require('../opponent-adjustment.js');
+const metrics={points:{offense:28,defenseAllowed:25},success:{offense:.45,defenseAllowed:.4},explosive:{offense:.07,defenseAllowed:.06},yards:{offense:380,defenseAllowed:350}};
+const side={games:4,metrics,opponentStrength:3,sourceGames:[{id:'old',date:'2026-09-01',points:28,opponent:'B',opponentName:'<script>',url:'javascript:alert(1)'}]};
+const f={coreMargin:2,opponentAdjustment:{appliedToMain:true,cutoff:'2026-11-05',unadjustedHomeMargin:13,home:side,away:{...side,opponentStrength:-2},method:'FBS comparisons'}};
+const html=match(f,'<Home>','Away');
+assert.match(html,/Before opponent adjustment/);
+assert.match(html,/Current main forecast/);
+assert.match(html,/5.0 points stronger/);
+assert.match(html,/by 2.0/);
+assert.doesNotMatch(html,/<Home>|<script>|href="javascript:/);
+assert.equal(match({},'H','A'),'');
+assert.match(match({opponentAdjustment:{appliedToMain:false,reason:'Missing FBS coverage'}},'H','A'),/Missing FBS coverage/);
+const report=evaluation({games:20,unadjusted:{marginMAE:12,accuracy:.65,brier:.2},adjusted:{marginMAE:13,accuracy:.6,brier:.21}});
+assert.match(report,/13.00/,'A worse adjusted result must still be shown');
+assert.match(report,/do not establish improved accuracy/);
+console.log('Opponent-adjustment comparison, missing coverage and HTML safety passed');

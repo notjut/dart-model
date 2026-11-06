@@ -1,6 +1,8 @@
 import json,pathlib,datetime,math,collections,os,numpy as np
 from scipy.special import ndtr
+from opponent_strength import OpponentRatings, adjusted_features, VERSION
 R=pathlib.Path(__file__).resolve().parents[1];DATA=pathlib.Path(os.environ.get('DART_MODEL_INPUT',str(R/'dist/data.json')));OUTPUT=pathlib.Path(os.environ.get('DART_MODEL_OUTPUT',str(R/'dist/model.json')));d=json.loads(DATA.read_text());season_year=int(d['asOf'][:4]);games=sorted(d['games'],key=lambda g:(g['date'],g['id']));teams=d['teams'];history=collections.defaultdict(list);elo=collections.defaultdict(lambda:1500.);records=[];live=[];lastseason=None
+opponent_ratings=OpponentRatings(d)
 names=['Elo difference','Net success-rate difference','Scoring margin difference','Scoring environment','Home field','Home/road scoring residual','Explosive-rate difference','Yards/game difference','Rest difference','Post-big-win difference','Look-ahead difference','Evening residual difference','Recent series residual']
 if os.environ.get('DART_CONTEXT_CANDIDATE')=='1':names += ['Home/road offensive scoring difference','Home/road defensive scoring difference','After-win/loss scoring residual difference']
 core=[0,1,2,3,4,6,7]+([13,14,15] if os.environ.get('DART_CONTEXT_CANDIDATE')=='1' else []);context=[5,8,9,10,11,12]
@@ -35,7 +37,8 @@ def features(g):
  f=[(elo[h]-elo[a])/100,(hp['net']-ap['net'])*100,hp['margin']-ap['margin'],(hp['pf']+hp['pa']+ap['pf']+ap['pa'])/2,int(not g['neutral']),0 if g['neutral'] else hp['homeResid']-ap['awayResid'],100*(hp['exp']-ap['exp']),hp['yards']-ap['yards'],rest(hp)-rest(ap),int(bool(hp['last'] and hp['last']['bigWin']))-int(bool(ap['last'] and ap['last']['bigWin'])),look(h,a)-look(a,h),(hp['nightResid']-ap['nightResid']) if night(g) else 0,sum(r['residual'] for r in past)/(len(past)+16)]
  f += [0 if g['neutral'] else hp['homeOff']-ap['awayOff'],0 if g['neutral'] else hp['homeDef']-ap['awayDef'],hp['afterResult']-ap['afterResult']]
  f.append(int(h in coach_games[g['id']])-int(a in coach_games[g['id']]))
- return f,hp,ap,past
+ adjustment=opponent_ratings.matchup(g)
+ return adjusted_features(f,adjustment),hp,ap,past,f,adjustment
 
 def update(g):
  h,a=g['home'],g['away'];hm=g['hs']-g['as'];expected=(elo[h]-elo[a])/25+(0 if g['neutral'] else 2.5);oldh,olda=elo[h],elo[a]
@@ -56,45 +59,49 @@ for date,group in __import__('itertools').groupby(games,key=lambda g:g['date'][:
  if date>d['asOf']:continue
  for g in group:
   if g['done'] and g['season']==season_year:
-   f,hp,ap,past=features(g)
-   if hp['n']>=3 and ap['n']>=3 and hp['plays']>=80 and ap['plays']>=80:records.append({'g':g,'x':f,'y':[g['hs']-g['as'],g['hs']+g['as']]})
+   f,hp,ap,past,raw,adjustment=features(g)
+   if hp['n']>=3 and ap['n']>=3 and hp['plays']>=80 and ap['plays']>=80:records.append({'g':g,'x':f,'raw':raw,'y':[g['hs']-g['as'],g['hs']+g['as']]})
  for g in group:
   if g['done']:update(g)
 
-def fit(rs,idx):
- X=np.array([[r['x'][j] for j in idx] for r in rs]);Y=np.array([r['y'] for r in rs]);mu=X.mean(0);sd=X.std(0);sd[sd<1e-8]=1;Z=np.c_[np.ones(len(X)),(X-mu)/sd];pen=np.eye(Z.shape[1])*30;pen[0,0]=0;b=np.linalg.solve(Z.T@Z+pen,Z.T@Y);err=Y-Z@b;return mu,sd,b,max(10,float(np.std(err[:,0])))
+def fit(rs,idx,field='x'):
+ X=np.array([[r[field][j] for j in idx] for r in rs]);Y=np.array([r['y'] for r in rs]);mu=X.mean(0);sd=X.std(0);sd[sd<1e-8]=1;Z=np.c_[np.ones(len(X)),(X-mu)/sd];pen=np.eye(Z.shape[1])*30;pen[0,0]=0;b=np.linalg.solve(Z.T@Z+pen,Z.T@Y);err=Y-Z@b;return mu,sd,b,max(10,float(np.std(err[:,0])))
 def predict(m,x,idx):
  mu,sd,b,s=m;z=np.r_[1,(np.array(x)[idx]-mu)/sd];return z@b,z[:,None]*b
 held=[]
 for date,grp in __import__('itertools').groupby(records,key=lambda r:r['g']['date'][:10]):
  prev=[r for r in records if r['g']['date'][:10]<date]
  if len(prev)<100:continue
- cm=fit(prev,core);fm=fit(prev,list(range(len(names))));ccm=fit(prev,coach_idx)
+ legacy=fit(prev,core,'raw');legacy_context=fit(prev,list(range(len(names))),'raw');cm=fit(prev,core);fm=fit(prev,list(range(len(names))));ccm=fit(prev,coach_idx)
  for r in grp:
-  ccp,_=predict(ccm,r['x'],coach_idx);cp,_=predict(cm,r['x'],core);fp,_=predict(fm,r['x'],list(range(len(names))));s=fm[3];p=float(ndtr(fp[0]/s));held.append({'id':r['g']['id'],'date':date,'actual':r['y'],'core':cp.tolist(),'full':fp.tolist(),'prob':p,'sd':s,'coreSd':cm[3],'coachCandidate':ccp.tolist(),'coachSd':ccm[3],'coachChange':bool(coach_games[r['g']['id']])})
+  rawp,_=predict(legacy,r['raw'],core);rawfull,_=predict(legacy_context,r['raw'],list(range(len(names))));ccp,_=predict(ccm,r['x'],coach_idx);cp,_=predict(cm,r['x'],core);fp,_=predict(fm,r['x'],list(range(len(names))));s=fm[3];p=float(ndtr(fp[0]/s));held.append({'id':r['g']['id'],'date':date,'actual':r['y'],'core':cp.tolist(),'legacyCore':rawp.tolist(),'legacyFull':rawfull.tolist(),'legacySd':legacy[3],'full':fp.tolist(),'prob':p,'sd':s,'coreSd':cm[3],'coachCandidate':ccp.tolist(),'coachSd':ccm[3],'coachChange':bool(coach_games[r['g']['id']])})
 if len(records)<100:raise ValueError('Insufficient training data: '+str(len(records)))
-full=fit(records,list(range(len(names))));baseline=fit(records,core);coach_fit=fit(records,coach_idx)
+legacy=fit(records,core,'raw');legacy_full=fit(records,list(range(len(names))),'raw');full=fit(records,list(range(len(names))));baseline=fit(records,core);coach_fit=fit(records,coach_idx)
 forecastSd=max(10,float(np.sqrt(np.mean([(r['full'][0]-r['actual'][0])**2 for r in held])))) if len(held)>=30 else full[3]
+legacyForecastSd=max(10,float(np.sqrt(np.mean([(r['legacyFull'][0]-r['actual'][0])**2 for r in held])))) if len(held)>=30 else legacy_full[3]
+legacyCoreSd=max(10,float(np.sqrt(np.mean([(r['legacyCore'][0]-r['actual'][0])**2 for r in held])))) if len(held)>=30 else legacy[3]
 # Current-data matchup forecasts for scheduled games only, not retrospective backfilled claims.
 cut=d['asOf'];upcoming=[g for g in games if not g['done'] and g['season']==season_year and cut<=g['date'][:10]<=(datetime.date.fromisoformat(cut)+datetime.timedelta(days=14)).isoformat()]
 for g in upcoming:
- f,hp,ap,past=features(g)
+ f,hp,ap,past,raw,adjustment=features(g)
  if hp['n']<3 or ap['n']<3:continue
  if datetime.datetime.fromisoformat(g['date'].replace('Z','+00:00'))<=datetime.datetime.now(datetime.timezone.utc):continue
- coach_pred,coach_parts=predict(coach_fit,f,coach_idx);pred,parts=predict(full,f,list(range(len(names))));base,coreParts=predict(baseline,f,core);margin=float(pred[0]);total=max(abs(margin)+2,float(pred[1]));s=forecastSd
- live.append({'id':g['id'],'homeScore':round((total+margin)/2),'awayScore':round((total-margin)/2),'margin':margin,'total':total,'homeWin':float(ndtr(margin/s)),'sd':s,'coreMargin':float(base[0]),'coreTotal':float(base[1]),'coreSd':max(10,float(np.sqrt(np.mean([(r['core'][0]-r['actual'][0])**2 for r in held])))) if len(held)>=30 else baseline[3],'coreContributions':[{'name':names[i],'points':round(float(coreParts[j+1,0]),2)} for j,i in enumerate(core)],'coreIntercept':float(coreParts[0,0]),'contributions':[{'name':names[i],'points':round(float(parts[i+1,0]),2)} for i in range(len(names))],'intercept':float(parts[0,0]),'homeProfile':hp,'awayProfile':ap,'series':past,'features':f,'limited':hp['plays']<80 or ap['plays']<80,'coachChangeEvents':[r for r in coach_rows if r['gameId']==g['id']],'coachChangeCandidate':{'active':bool(coach_games[g['id']]),'homeMargin':float(coach_pred[0]),'indicatorContribution':float(coach_parts[-1,0]),'appliedToMain':False}})
+ raw_pred,_=predict(legacy,raw,core);adjustment['unadjustedHomeMargin']=float(raw_pred[0]);coach_pred,coach_parts=predict(coach_fit,f,coach_idx);pred,parts=predict(full if adjustment['appliedToMain'] else legacy_full,f,list(range(len(names))));base,coreParts=predict(baseline if adjustment['appliedToMain'] else legacy,f,core);margin=float(pred[0]);total=max(abs(margin)+2,float(pred[1]));s=forecastSd if adjustment['appliedToMain'] else legacyForecastSd
+ live.append({'id':g['id'],'modelVersion':VERSION if adjustment['appliedToMain'] else 'legacy-unadjusted-v1','opponentAdjustment':adjustment,'homeScore':round((total+margin)/2),'awayScore':round((total-margin)/2),'margin':margin,'total':total,'homeWin':float(ndtr(margin/s)),'sd':s,'coreMargin':float(base[0]),'coreTotal':float(base[1]),'coreSd':(max(10,float(np.sqrt(np.mean([(r['core'][0]-r['actual'][0])**2 for r in held])))) if len(held)>=30 else baseline[3]) if adjustment['appliedToMain'] else legacyCoreSd,'coreContributions':[{'name':names[i],'points':round(float(coreParts[j+1,0]),2)} for j,i in enumerate(core)],'coreIntercept':float(coreParts[0,0]),'contributions':[{'name':names[i],'points':round(float(parts[i+1,0]),2)} for i in range(len(names))],'intercept':float(parts[0,0]),'homeProfile':hp,'awayProfile':ap,'series':past,'features':f,'limited':hp['plays']<80 or ap['plays']<80,'coachChangeEvents':[r for r in coach_rows if r['gameId']==g['id']],'coachChangeCandidate':{'active':bool(coach_games[g['id']]),'homeMargin':float(coach_pred[0]),'indicatorContribution':float(coach_parts[-1,0]),'appliedToMain':False}})
  for latest in live[-1:]:
   if latest['homeScore']==latest['awayScore']:
    latest['homeScore' if latest['margin']>=0 else 'awayScore']+=1
 def metrics(which):
- errs=[abs(r[which][0]-r['actual'][0]) for r in held];te=[abs(r[which][1]-r['actual'][1]) for r in held];ps=[float(ndtr(r[which][0]/r['coreSd' if which=='core' else 'sd'])) for r in held]
- return {'marginMAE':avg(errs),'totalMAE':avg(te),'accuracy':avg([int((r[which][0]>0)==(r['actual'][0]>0)) for r in held]),'brier':avg([(p-int(r['actual'][0]>0))**2 for p,r in zip(ps,held)]),'coverage80':avg([int(abs(r[which][0]-r['actual'][0])<=1.282*r['coreSd' if which=='core' else 'sd']) for r in held])}
+ errs=[abs(r[which][0]-r['actual'][0]) for r in held];te=[abs(r[which][1]-r['actual'][1]) for r in held];ps=[float(ndtr(r[which][0]/r['coreSd' if which=='core' else 'legacySd' if which=='legacyCore' else 'sd'])) for r in held]
+ return {'marginMAE':avg(errs),'totalMAE':avg(te),'accuracy':avg([int((r[which][0]>0)==(r['actual'][0]>0)) for r in held]),'brier':avg([(p-int(r['actual'][0]>0))**2 for p,r in zip(ps,held)]),'coverage80':avg([int(abs(r[which][0]-r['actual'][0])<=1.282*r['coreSd' if which=='core' else 'legacySd' if which=='legacyCore' else 'sd']) for r in held])}
 cal=[]
 for lo in [0,.2,.4,.6,.8]:
  rows=[r for r in held if lo<=r['prob']<lo+.2+1e-10];cal.append({'band':f'{round(lo*100)}–{round((lo+.2)*100)}%','n':len(rows),'predicted':avg([r['prob'] for r in rows]),'actual':avg([int(r['actual'][0]>0) for r in rows])})
-out={'trainedGames':len(records),'testedGames':len(held),'testStart':held[0]['date'] if held else None,'testEnd':held[-1]['date'] if held else None,'core':metrics('core'),'full':metrics('full'),'calibration':cal,'heldout':held,'forecasts':live,'features':names,'sd':full[3],'model':'Standardized ridge regression, penalty 30, expanding-date holdout; margin and total targets. Equal weights. Elo prior from 2025. No market inputs.'}
+out={'trainedGames':len(records),'testedGames':len(held),'testStart':held[0]['date'] if held else None,'testEnd':held[-1]['date'] if held else None,'core':metrics('core'),'full':metrics('full'),'calibration':cal,'heldout':held,'forecasts':live,'features':names,'sd':full[3],'model':'Standardized ridge regression, penalty 30, expanding-date holdout; margin and total targets. Opponent-adjusted FBS performance inputs with three-game shrinkage. Elo prior from 2025. No market inputs.'}
 coach_held=[r for r in held if r['coachChange']]
 coach_n=sum(bool(coach_games[r['g']['id']]) for r in records)
 out['coachChangeTrial']={'trainingGamesWithChange':coach_n,'testedGamesWithChange':len(coach_held),'baselineMarginMAE':avg([abs(r['core'][0]-r['actual'][0]) for r in coach_held]) if coach_held else None,'candidateMarginMAE':avg([abs(r['coachCandidate'][0]-r['actual'][0]) for r in coach_held]) if coach_held else None,'mainModelApplied':False,'status':'testing','note':'First-game-after-dismissal indicator tested with earlier-game training only. Small, incomplete event sample; not independently validated. No automatic score bonus or main-model promotion.'}
+out['modelVersion']=VERSION
+out['opponentAdjustmentEvaluation']={'version':VERSION,'type':'development_replay','games':len(held),'start':held[0]['date'] if held else None,'end':held[-1]['date'] if held else None,'unadjusted':metrics('legacyCore'),'adjusted':metrics('core'),'method':'Same games and expanding-date fits for both models. Opponent ratings use only earlier calendar dates. Fixed three-game shrinkage; FCS performance excluded. Reconstructed source data, not a prospective winning record.'}
 out['asOf']=d['asOf'];out['generatedAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();out['inputRetrievedAt']=d.get('retrievedAt');out['inputFile']=DATA.name
 OUTPUT.write_text(json.dumps(out,separators=(',',':')));print(json.dumps({k:out[k] for k in ['trainedGames','testedGames','core','full']},indent=2));print('Forecasts',len(live))

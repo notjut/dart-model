@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from zoneinfo import ZoneInfo
+from opponent_strength import VERSION as OPPONENT_VERSION, adjusted_features
 from upset_engine import apply as apply_upset_research, grade_trial
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,6 +67,17 @@ def validate_forecasts(data, model, now):
             raise ValueError('Nonfinite forecast')
         if min(f['coreSd'], f['sd']) <= 0:
             raise ValueError('Invalid forecast uncertainty')
+        if model.get('modelVersion') == OPPONENT_VERSION:
+            adjustment = f.get('opponentAdjustment')
+            if not adjustment or adjustment.get('version') != OPPONENT_VERSION:
+                raise ValueError('Opponent adjustment missing from refreshed forecast')
+            if adjustment.get('appliedToMain'):
+                expected = adjusted_features(f['features'], adjustment)
+                if any(not math.isfinite(v) or abs(v - f['features'][i]) > 1e-8 for i, v in enumerate(expected)):
+                    raise ValueError('Main model does not use the saved opponent-adjusted inputs')
+                for side in ['home', 'away']:
+                    if any(g['date'][:10] >= adjustment['cutoff'] for g in adjustment[side]['sourceGames']):
+                        raise ValueError('Future game in opponent-adjusted inputs')
         trial = f.get('upsetResearch')
         if trial and trial.get('status') == 'testing':
             if trial.get('appliedToMain') is not False or trial['baselineHomeMargin'] != f['coreMargin']:
@@ -83,6 +95,7 @@ def snapshot(data, model, quotes, recorded_at, recovered=False):
     ids = {f['id'] for f in model['forecasts']}
     return {'generatedAt': model['generatedAt'], 'recordedAt': recorded_at,
             'type': 'recovered_saved_forecast' if recovered else 'prospective_snapshot',
+            'modelVersion': model.get('modelVersion', 'legacy-unadjusted-v1'),
             'asOf': model.get('asOf', data['asOf']), 'forecasts': model['forecasts'],
             'games': {g['id']: g for g in data['games'] if g['id'] in ids},
             'quotes': {k: v for k, v in quotes.get('games', {}).items() if k in ids}}
@@ -107,6 +120,9 @@ def pick_explanation(f, g, picked, data):
         'Explosive-rate difference': 'big-play production',
         'Yards/game difference': 'offensive yardage',
     }
+    if f.get('opponentAdjustment', {}).get('appliedToMain'):
+        for key in ['Net success-rate difference', 'Scoring margin difference', 'Scoring environment', 'Explosive-rate difference', 'Yards/game difference']:
+            labels[key] = 'opponent-adjusted ' + labels[key]
     if not picked:
         return {'pregame': 'The main forecast did not select a winner.', 'recap': [], 'drivers': []}
     sign = 1 if picked == g['home'] else -1
@@ -314,7 +330,9 @@ def run():
               'scheduleTeams': len(data['refresh']['scheduleTeamsRefreshed']), 'forecastGames': len(model['forecasts']),
               'availability': availability['coverage'], 'supplementalInjuryCheck': availability['supplementalCheck'], 'coachChangeTrial': model.get('coachChangeTrial'), 'sourceWarnings': availability['failures'] + context['fetchFailures'] + read(work/'coach-change-history.json')['fetchFailures'] + rankings['warnings'],
               'upsetResearchTrial': model.get('upsetResearchTrial'), 'rankings': rankings['coverage'],
-              'modelLimit': 'Protection, run resistance and touchdown drives now feed a separate experimental forecast. Main picks are unchanged. Starting roles, injury effects and weather are not fitted. Reported QB concerns exclude a game from automated tickets.'}
+              'modelVersion': model.get('modelVersion'),
+              'opponentAdjustmentEvaluation': model.get('opponentAdjustmentEvaluation'),
+              'modelLimit': 'Main FBS forecasts now use opponent-adjusted scoring, success rate, big-play rate and yardage. Protection, run resistance and touchdown drives feed a separate experimental forecast. Starting roles, injury effects and weather are not fitted. Reported QB concerns exclude a game from automated tickets.'}
 
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))

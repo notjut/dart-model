@@ -60,6 +60,26 @@
       const season=String(game.season),scope=`${season} season · completed games before this forecast`;
       const headline=tied?'The model has this game even.':ui.market&&ui.team===picked?`Darkhorse picks ${n} to win the upset.`:`Darkhorse picks ${n} to win.`;
       const summary=tied?'There is no outright winner pick. The displayed score uses a one-point tiebreak.':`Projected score: ${teamName(game.away)} ${q.a}, ${teamName(game.home)} ${q.h}. ${n} has an estimated ${Math.round(p*100)}% chance to win. ${ui.market&&ui.team===picked?'This is an outright-win pick, not just a pick to cover the spread.':ui.market?`The underdog is ${teamName(ui.team)}; the model is not picking it to win.`:'No posted underdog is established for this matchup.'}`;
+      const adjustment=f.opponentAdjustment;
+      if(adjustment?.appliedToMain){
+        const ownAdjusted=picked===game.home?adjustment.home:adjustment.away;
+        const otherAdjusted=picked===game.home?adjustment.away:adjustment.home;
+        const pm=ownAdjusted.metrics,om=otherAdjusted.metrics;
+        const fbsRows=[...own,...opponent].filter(r=>teams[r.opponent]?.conference!=='Non-FBS opponent');
+        const ratingScope=`${season} · opponent-adjusted FBS performance before ${adjustment.cutoff}`;
+        const ratingExtra={sample:`${ownAdjusted.games} ${n} FBS games · ${otherAdjusted.games} ${on} FBS games`,caution:'Ratings estimate performance against an average FBS opponent at a neutral venue. Small samples shrink toward average; FCS games are excluded.',modelUse:'Opponent-adjusted performance is used in the main forecast.'};
+        const net=x=>x.offense-x.defenseAllowed;
+        const scoringEdge=net(pm.points)-net(om.points);
+        (scoringEdge>=0?support:risks).push(fact(`After opponent adjustment, ${scoringEdge>=0?n:on} has the stronger scoring balance.`,`${n}: ${one(pm.points.offense)} estimated points scored and ${one(pm.points.defenseAllowed)} allowed against an average FBS opponent. ${on}: ${one(om.points.offense)} scored and ${one(om.points.defenseAllowed)} allowed. ${scoringEdge>=0?'That supports the pick.':'That works against the pick, despite what the raw averages suggest.'}`,fbsRows,ratingScope,ratingExtra));
+        const efficiencyGap=100*(net(pm.success)-net(om.success));
+        if(Math.abs(efficiencyGap)<1)risks.push(fact('Opponent-adjusted drive efficiency is almost even.',`The net successful-play gap is only ${one(Math.abs(efficiencyGap))} percentage points. That is not a large advantage for either side.`,fbsRows,ratingScope,ratingExtra));
+        else (efficiencyGap>0?support:risks).push(fact(`${efficiencyGap>0?n:on} has the better opponent-adjusted drive efficiency.`,`${n} keeps ${one(pm.success.offense*100)}% of plays on track and allows ${one(pm.success.defenseAllowed*100)}%; ${on}: ${one(om.success.offense*100)}% and ${one(om.success.defenseAllowed*100)}%. These estimates account for the opponents each team faced.`,fbsRows,ratingScope,ratingExtra));
+        const bigGap=pm.explosive.offense-om.explosive.offense;
+        if(Math.abs(bigGap)>=.01)(bigGap>0?support:risks).push(fact(`${bigGap>0?n:on} retains a big-play advantage after opponent adjustment.`,`${n} is estimated to produce 20-yard gains on ${one(pm.explosive.offense*100)}% of plays against an average FBS defense; ${on}, ${one(om.explosive.offense*100)}%.`,fbsRows,ratingScope,ratingExtra));
+        const eloDriver=f.coreContributions?.find(c=>c.name==='Elo difference');
+        if(eloDriver&&Math.abs(eloDriver.points)>=.5){const towardPick=eloDriver.points*(picked===game.home?1:-1);(towardPick>0?support:risks).push(fact(`The previous-results strength rating favors ${towardPick>0?n:on}.`,`That rating moves this forecast ${one(Math.abs(eloDriver.points))} points toward ${towardPick>0?n:on}. It tracks wins and losses against opponents; it is separate from the adjusted production ratings above.`,[], 'Saved main-model contribution',{caution:'A team-strength rating is an estimate, not a guarantee.'}));}
+        if(own.length&&opponent.length)context.push(fact(`Raw scoring averages: ${n} ${one(avg(own.map(r=>r.pf)))}; ${on} ${one(avg(opponent.map(r=>r.pf)))}.`, 'These describe what happened, including FCS games. The main model uses opponent-adjusted FBS ratings instead of treating these raw averages as directly comparable.',[...own,...opponent],scope,{caution:'Different schedules can make raw averages misleading.'}));
+      }else{
       // Put actual scoring production ahead of abstract feature names.
       if(own.length&&opponent.length){
         const scored=avg(own.map(r=>r.pf)),oppScored=avg(opponent.map(r=>r.pf)),allowed=avg(opponent.map(r=>r.pa));
@@ -82,6 +102,7 @@
         }else{
           (gap>0?support:risks).push(fact(`${gap>0?n:on} has the better drive-efficiency balance.`,`${n}’s offense keeps about ${Math.round(pr.sr*100)} of every 100 plays on track; its defense allows about ${Math.round(pr.dsr*100)}. ${on}: ${Math.round(op.sr*100)} on offense and ${Math.round(op.dsr*100)} allowed. ${gap>0?'That balance supports the pick.':'That balance is a reason the pick could lose.'}`,[...own,...opponent],scope,{sample:`${pr.plays} / ${op.plays} offensive plays`,caution:'Rates are model estimates with a small-sample adjustment. Opponent strength is handled separately.'}));
         }
+      }
       }
       const ranks=defensiveRanks(game),oppRank=ranks.ranks[other];
       if(ranks.complete&&oppRank){
@@ -124,7 +145,7 @@
       if(f.reviewRequired)risks.unshift(fact('A reported quarterback concern needs a fresh check.','This game is flagged for availability review. The projection does not establish who will start.',[],'Current availability review',{caution:'Do not read missing injury reports as a healthy roster.'}));
       // Do not suppress contrary evidence just because a model selected this team.
       if(!risks.length)risks.push(fact('This is still a forecast, not a lock.',`The model gives ${on} about a ${Math.round((1-p)*100)}% chance to win. A favorite or underdog can outperform its past averages.`,[], 'Model estimate',{caution:''}));
-      return {research:f.upsetResearch,homeName:teamName(game.home),awayName:teamName(game.away),headline,summary,picked,tied,support,risks,context,gaps,season,cutoff:new Date(before(game)).toISOString(),facts:support.length+risks.length,modelNote:'The main score and win chance are unchanged. Season splits and historical groups provide context; they do not create extra point bonuses. Missing injury or starting-QB information is not treated as confirmation of a healthy lineup.'};
+      return {forecast:f,research:f.upsetResearch,homeName:teamName(game.home),awayName:teamName(game.away),headline,summary,picked,tied,support,risks,context,gaps,season,cutoff:new Date(before(game)).toISOString(),facts:support.length+risks.length,modelNote:adjustment?.appliedToMain?'The main score uses opponent-adjusted FBS scoring, drive efficiency, big plays and yardage. Raw splits and historical groups are context only. Missing injury or starter information is not treated as a healthy lineup.':'The main score and win chance are unchanged. Season splits and historical groups provide context; they do not create extra point bonuses. Missing injury or starting-QB information is not treated as confirmation of a healthy lineup.'};
     }
     return {build,rowsFor,defensiveRanks};
   }
@@ -134,7 +155,7 @@
   }
   function render(brief){
     if(!brief)return '<p>The matchup explanation could not be loaded.</p>';
-    return `<div class="matchup-brief"><section aria-label="Reasons behind the pick"><h4>${brief.tied?'Why this is close':'The case for the pick'}</h4><ul class="brief-list">${brief.support.map(renderFact).join('')||'<li>No strong supporting comparison is available in the loaded data.</li>'}</ul></section><section class="brief-risks" aria-label="Reasons the pick could lose"><h4>What could make this pick lose</h4><ul class="brief-list">${brief.risks.map(renderFact).join('')}</ul></section>${brief.context.length?`<details class="brief-context"><summary>More matchup history · ${brief.context.length} facts</summary><ul class="brief-list">${brief.context.map(renderFact).join('')}</ul></details>`:''}${brief.gaps.length?`<details class="brief-context"><summary>What we could not verify</summary><ul>${brief.gaps.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:''}${typeof DarkhorseResearch!=='undefined'?DarkhorseResearch.match(brief.research,brief.homeName,brief.awayName):''}<p class="brief-method">${esc(brief.modelNote)}</p></div>`;
+    return `<div class="matchup-brief">${typeof DarkhorseOpponents!=='undefined'?DarkhorseOpponents.match(brief.forecast,brief.homeName,brief.awayName):''}<section aria-label="Reasons behind the pick"><h4>${brief.tied?'Why this is close':'The case for the pick'}</h4><ul class="brief-list">${brief.support.map(renderFact).join('')||'<li>No strong supporting comparison is available in the loaded data.</li>'}</ul></section><section class="brief-risks" aria-label="Reasons the pick could lose"><h4>What could make this pick lose</h4><ul class="brief-list">${brief.risks.map(renderFact).join('')}</ul></section>${brief.context.length?`<details class="brief-context"><summary>More matchup history · ${brief.context.length} facts</summary><ul class="brief-list">${brief.context.map(renderFact).join('')}</ul></details>`:''}${brief.gaps.length?`<details class="brief-context"><summary>What we could not verify</summary><ul>${brief.gaps.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></details>`:''}${typeof DarkhorseResearch!=='undefined'?DarkhorseResearch.match(brief.research,brief.homeName,brief.awayName):''}<p class="brief-method">${esc(brief.modelNote)}</p></div>`;
   }
   root.DarkhorseBrief={createEngine,render,evening};
   if(typeof module!=='undefined')module.exports=root.DarkhorseBrief;

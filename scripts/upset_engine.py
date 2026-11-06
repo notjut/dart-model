@@ -15,7 +15,7 @@ import numpy as np
 from refresh_core import get, BASE
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'upset-research-v1'
+VERSION = 'upset-research-v2-opponent-baseline'
 METRIC_VERSION = 1
 MIN_TRAIN = 60
 LABELS = ['Protection matchup', 'Run-game resistance', 'Touchdown drives']
