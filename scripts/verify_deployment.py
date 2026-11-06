@@ -31,6 +31,10 @@ for attempt in range(12):
                     rankings = json.load(response)
                 if rankings.get('runId') != expected or rankings.get('coverage') != actual.get('rankings'):
                     raise ValueError('Published rankings do not match this release')
+                with urllib.request.urlopen(base+'/started-games.json?run='+expected, timeout=20) as response:
+                    started = json.load(response)
+                if started.get('runId') != expected:
+                    raise ValueError('Published started games do not match this release')
                 print('Verified published release', expected)
                 break
     except Exception as error:

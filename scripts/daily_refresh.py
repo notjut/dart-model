@@ -12,6 +12,7 @@ import sys
 from zoneinfo import ZoneInfo
 from opponent_strength import VERSION as OPPONENT_VERSION, adjusted_features
 from upset_engine import apply as apply_upset_research, grade_trial
+from started_games import build as build_started_games
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -323,6 +324,7 @@ def run():
     current = snapshot(data, model, read(work/'game-details.json'), dt.datetime.now(UTC).isoformat())
     snaps.append(current)
     write(work/'daily-results.json', grade_snapshots(snaps, data))
+    write(work/'started-games.json', build_started_games(snaps, data, read(work/'game-details.json'), run_id))
     write(work/'upset-research-results.json', grade_trial(snaps, data))
     context = read(work/'matchup-context.json')
     status = {'runId': run_id, 'status': 'validated', 'dataAsOf': data['asOf'],
@@ -337,7 +339,7 @@ def run():
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))
     # No repository data is replaced until the release passes the checks above.
-    publish = ['team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
+    publish = ['started-games.json', 'team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
                'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json',
                'upset-metric-history.json', 'upset-research-results.json']

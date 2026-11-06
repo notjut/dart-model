@@ -18,3 +18,5 @@ require('./test_upset_research.cjs');
 
 require('./test_rankings.cjs');
 require('./test_opponent_ui.cjs');
+
+require('./test_started_games.cjs');
