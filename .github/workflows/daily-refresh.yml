@@ -1,125 +1,45 @@
-name: Refresh and publish The Darkhorse Model
+name: SportsDataIO isolated trial audit
 
 on:
-  schedule:
-    # Every morning: 8:17 a.m. EST / 9:17 a.m. EDT. GitHub may queue scheduled runs.
-    - cron: '17 13 * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/daily-refresh.yml'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'requirements.txt'
-      - '*.js'
-      - '*.css'
-      - 'index.html'
 
 permissions:
   contents: read
 
-concurrency:
-  group: dart-refresh-and-publish
-  cancel-in-progress: false
-
 jobs:
-  refresh:
+  audit:
+    if: github.ref == 'refs/heads/test/sportsdataio-coverage'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: write
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          ref: main
-      - name: Apply prepared source release when present
+          python-version: '3.12'
+      - name: Prepare checked audit source
         run: |
           python - <<'PYCODE'
           import hashlib, json
           from pathlib import Path
-          release = Path('darkhorse-release.json')
-          if release.exists():
-              payload = json.loads(release.read_text())
-              for item in payload['files']:
-                  path = Path(item['path'])
-                  if path.is_absolute() or '..' in path.parts or path.parts[0] in {'.git', '.github'}:
-                      raise ValueError('Invalid release path')
-                  content = item['content']
-                  if hashlib.sha256(content.encode()).hexdigest() != item['sha256']:
-                      raise ValueError('Release checksum mismatch')
-                  path.parent.mkdir(parents=True, exist_ok=True)
-                  path.write_text(content)
-              release.unlink()
+          allowed = {'scripts/audit_sportsdataio.py', 'tests/test_sportsdataio_audit.py'}
+          payload = json.loads(Path('darkhorse-release.json').read_text())
+          written = set()
+          for item in payload['files']:
+              if item['path'] not in allowed:
+                  continue
+              content = item['content']
+              if hashlib.sha256(content.encode()).hexdigest() != item['sha256']:
+                  raise ValueError('Audit source checksum mismatch')
+              path = Path(item['path'])
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_text(content)
+              written.add(item['path'])
+          if written != allowed:
+              raise ValueError('Missing audit source')
           PYCODE
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: pip
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: python -m pip install -r requirements.txt
-      - name: Check grading and stale-data safeguards
-        run: |
-          python -m unittest discover -s tests -p 'test_*.py'
-          node tests/freshness.cjs
-          node --check app.js
-          node --check live-updates.js
-          node --check parlays.js
-          node --check darkhorse.js
-          node --check sniper.js
-          node tests/test_sniper.cjs
-      - name: Refresh data and rebuild forecasts
+      - name: Check credential handling and trial isolation
+        run: python -m unittest discover -s tests -p 'test_sportsdataio_audit.py'
+      - name: Test SportsDataIO injury coverage without changing predictions
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY || secrets.ODDSAPIKEY }}
-        run: python scripts/daily_refresh.py
-      - name: Preserve verified release and prediction archive
-        run: |
-          git config user.name 'Darkhorse refresh bot'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A -- '*.json' forecast-archive/ scripts/ tests/ '*.js' '*.css' index.html requirements.txt .gitignore UPDATE-STATUS.md README.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Refresh Darkhorse data and preserve pregame forecasts'
-            git push origin HEAD:main
-          fi
-      - name: Package public site
-        run: python scripts/package_site.py
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-      - name: Save failure details
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dart-refresh-failure
-          path: refresh-failure.json
-          if-no-files-found: ignore
-          retention-days: 14
-
-  deploy:
-    needs: refresh
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Publish checked release
-        id: deployment
-        uses: actions/deploy-pages@v4
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Verify the public site serves this release
-        env:
-          DART_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
-        run: python scripts/verify_deployment.py
-
+          SPORTSDATAIOAPIKEY: ${{ secrets.SPORTSDATAIOAPIKEY }}
+        run: python scripts/audit_sportsdataio.py
