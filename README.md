@@ -118,3 +118,13 @@ The main model replaces its raw production features with those estimates; it doe
 ### Started games stay visible
 
 The Conference hub retains games from the last fourteen days in a Started & finished section, using the same week, conference and team filters. `started-games.json` is produced by the existing refresh from saved forecast archives. It shows the latest eligible pregame pick and pregame lines; no post-kickoff forecast or line can replace them. Missing archives are explicit. These cards never enter upcoming parlay or Seabiscuit selection. Scores appear only after completion; in-progress status is a dated snapshot with a box-score link. The public verifier checks its release ID.
+
+## Game-day dashboard and device ticket tracker
+
+The Home board groups game dates in Eastern time, starts with today, and retains recently started games and saved pregame picks. Date rails and the scoreboard scroll horizontally. Scores are whole points; displayed model margins round to half-points without changing forecast calculations. The score explorer is a view of the existing margin distribution, not a scenario adjustment to the prediction.
+
+`gameday-engine.js` owns the calendar and ticket rules. The moneyline builder uses actual eligible saved quotes, one sportsbook, distinct games and teams, and the existing data-age and availability safeguards. Auto-build ranks combinations by average leg probability after requiring each leg to be a model winner with positive model-minus-break-even probability. It is a selection rule, not a validated profitability claim. Independent-game all-legs probability is disclosed separately from the average, and quoted individual odds are not a combined sportsbook offer. No spread/total prices are invented when the data only provides a line. Sniper Sauce retains its separate shared-history same-game rule.
+
+Tickets and example stakes are saved only in browser localStorage under `darkhorse-tickets-v1`; no account sync or bets are placed. The tracker grades original selections from published final scores when the page is loaded, retains pending games without final scores, and reduces returns for void/pushed legs. Export creates a portable history file. Book-specific settlement may differ.
+
+Checks: `node tests/freshness.cjs`, `node tests/briefs.cjs`, `node tests/test_sniper.cjs`, and the existing Python suite. The existing daily refresh packages these UI files; no additional updater is introduced.
