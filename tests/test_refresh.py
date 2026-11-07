@@ -106,3 +106,22 @@ class RefreshTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class MarketPriceTests(unittest.TestCase):
+    def test_same_offer_prices_and_favorite_sign(self):
+        from daily_refresh import market_prices
+        row = market_prices({'spread': 2.5, 'overUnder': 42.5, 'overOdds': -102, 'underOdds': -118,
+                             'homeTeamOdds': {'moneyLine': 120, 'spreadOdds': -102, 'favorite': False},
+                             'awayTeamOdds': {'moneyLine': -142, 'spreadOdds': -118, 'favorite': True}})
+        self.assertEqual(row['homeSpread'], 2.5)
+        self.assertEqual(row['awaySpread'], -2.5)
+        self.assertEqual(row['homeSpreadOdds'], -102)
+        self.assertEqual(row['underOdds'], -118)
+    def test_no_invented_price_or_ambiguous_spread(self):
+        from daily_refresh import market_prices
+        row = market_prices({'spread': 3, 'overUnder': 48, 'overOdds': True,
+                             'homeTeamOdds': {'favorite': True}, 'awayTeamOdds': {'favorite': True}})
+        self.assertIsNone(row['homeSpread'])
+        self.assertIsNone(row['overOdds'])
+        self.assertIsNone(row['homeSpreadOdds'])
+        self.assertEqual(row['total'], 48)

@@ -222,6 +222,25 @@ def grade_snapshots(snapshots, data):
             'method': 'Latest saved forecast before kickoff, paired with a line retrieved before kickoff. Recovered legacy snapshots are identified. No reconstructed predictions are counted as issued picks.'}
 
 
+def market_prices(offer):
+    """Keep prices and lines from the same offer; never assume -110 or use opening odds."""
+    def number(value):
+        if isinstance(value, bool): return None
+        try: value = float(value)
+        except (ValueError, TypeError): return None
+        return value if math.isfinite(value) else None
+    def odds(value):
+        value = number(value)
+        return value if value is not None and abs(value) >= 100 else None
+    h, a = offer.get('homeTeamOdds', {}), offer.get('awayTeamOdds', {})
+    spread = number(offer.get('spread'))
+    home_spread = 0 if spread == 0 else (-abs(spread) if spread is not None and h.get('favorite') is True and a.get('favorite') is not True else abs(spread) if spread is not None and a.get('favorite') is True and h.get('favorite') is not True else None)
+    return {'homeMoneyline': odds(h.get('moneyLine')), 'awayMoneyline': odds(a.get('moneyLine')),
+            'homeSpread': home_spread, 'awaySpread': -home_spread if home_spread is not None else None,
+            'homeSpreadOdds': odds(h.get('spreadOdds')), 'awaySpreadOdds': odds(a.get('spreadOdds')),
+            'total': number(offer.get('overUnder')), 'overOdds': odds(offer.get('overOdds')), 'underOdds': odds(offer.get('underOdds'))}
+
+
 def make_odds(work, model, data):
     games = {g['id']: g for g in data['games']}
     rows = {}
@@ -234,12 +253,12 @@ def make_odds(work, model, data):
         x = cached['data']
         comp = x.get('header', {}).get('competitions', [{}])[0]
         offers = sorted(x.get('pickcenter', []), key=lambda x: x.get('provider', {}).get('priority', 99))
-        offer = next((o for o in offers if all(isinstance(o.get(s+'TeamOdds', {}).get('moneyLine'), (int, float)) for s in ['home', 'away'])), None)
+        offer = next((o for o in offers if any(v is not None for k, v in market_prices(o).items() if k.endswith('Odds') or k.endswith('Moneyline'))), None)
         if offer:
             rows[g['id']] = {'id': g['id'], 'date': g['date'], 'state': comp.get('status', {}).get('type', {}).get('state'),
                             'timeValid': g['timeValid'], 'retrievedAt': cached['retrievedAt'], 'url': g['url'],
                             'provider': offer.get('provider', {}).get('name'), 'channels': [],
-                            'homeMoneyline': offer['homeTeamOdds']['moneyLine'], 'awayMoneyline': offer['awayTeamOdds']['moneyLine']}
+                            **market_prices(offer)}
     return {'retrievedAt': data['retrievedAt'], 'modelAsOf': data['asOf'], 'games': rows}
 
 
