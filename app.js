@@ -19,7 +19,7 @@ const conferenceNames={'Southeastern Conference':'SEC','Atlantic Coast Conferenc
 const confOrder=Object.keys(conferenceNames);const shortConf=c=>conferenceNames[c]||c;
 function rankedName(t,historical=false){return `<span class="ranked-name"><span>${esc(name(t))}</span>${TeamRankings.badges(t,historical)}</span>`}
 function rankedMatchup(g,historical=false){return `<span class="ranked-matchup">${rankedName(g.away,historical)}<span class="ranked-vs">${g.neutral?'vs.':'at'}</span>${rankedName(g.home,historical)}</span>`}
-function logo(t){const team=D.teams[t],url=A?.logos.includes(t)?`assets/logos/${encodeURIComponent(t)}.png`:team?.logo;return url?`<img class="teamlogo" src="${esc(url)}" alt="${esc(name(t))} logo" loading="lazy" onerror="this.style.visibility='hidden'">`:''}
+function logo(t){const team=D.teams[t],url=A?.logos.includes(t)?`assets/logos-small/${encodeURIComponent(t)}.webp`:team?.logo;return url?`<img class="teamlogo" src="${esc(url)}" alt="${esc(name(t))} logo" loading="lazy" onerror="this.style.visibility='hidden'">`:''}
 function groupOf(g){const h=D.teams[g.home].conference,a=D.teams[g.away].conference;return h===a?h:'Cross-conference'}
 function venueKey(v){return String(v||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function sameVenue(a,b){if(a.venueId&&b.venueId)return a.venueId===b.venueId;const x=venueKey(a.venue),y=venueKey(b.venue);if(!x||!y||x.includes('unavailable')||y.includes('tba'))return false;return x===y||(['jordanhare','sanfordstadium','bryantdenny','tigerstadium','benhillgriffin','neyland','doakcampbell','davidbooth','memorialstadium'].filter(k=>k!=='memorialstadium').some(k=>x.includes(k)&&y.includes(k)))}
