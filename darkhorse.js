@@ -27,5 +27,5 @@ const DarkhorseCharts=(()=>{
   const update=()=>{const n=Number($('dhMarginSlider').value),p=1-cdf((n-q.margin)/sd),line=$('dhMarginCursor');line.setAttribute('x1',x(n));line.setAttribute('x2',x(n));$('dhMarginReadout').textContent=n===0?`${name(g.home)} has a ${pct(p)} estimated chance to win outright.`:n>0?`${pct(p)} estimated chance that ${name(g.home)} wins by more than ${n} points.`:`${pct(1-p)} estimated chance that ${name(g.away)} wins by more than ${-n} points.`;};$('dhMarginSlider').oninput=update;update();
  }
  async function init(){await initialDataReady;if(!D||!M)return;const curve=document.createElement('div');curve.id='dhMargin';curve.className='dh-prob-chart';document.querySelector('.forecast').append(curve);if(current)margin(current);document.querySelectorAll('[data-dh-nav]').forEach(b=>b.onclick=()=>{tab(b.dataset.dhNav);document.querySelector('nav').scrollIntoView({behavior:'smooth',block:'start'});});}
- document.addEventListener('DOMContentLoaded',()=>init().catch(console.error),{once:true});return {radar,margin};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>init().catch(console.error),{once:true});else init().catch(console.error);return {radar,margin};
 })();

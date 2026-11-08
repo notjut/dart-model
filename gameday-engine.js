@@ -1,7 +1,8 @@
 /* Display and ticket rules only. Forecast fitting and weights are unchanged. */
 (function(root){
 'use strict';
-const day=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+const dayFormatter=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'});
+const day=value=>dayFormatter.format(new Date(value));
 const half=value=>Number.isFinite(value)?Math.round(value*2)/2:null;
 const decimal=odds=>Number.isFinite(odds)&&Math.abs(odds)>=100?(odds>0?1+odds/100:1+100/-odds):null;
 const key=l=>[l.id,l.market||'moneyline',l.market==='total'?l.side:l.team,l.line??''].join(':');

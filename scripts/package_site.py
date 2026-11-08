@@ -3,6 +3,8 @@ from pathlib import Path
 import shutil
 
 root = Path(__file__).resolve().parents[1]
+import runpy
+runpy.run_path(str(root/'scripts/build_dashboard.py'))
 out = root/'dist'
 out.mkdir(exist_ok=True)
 for child in out.iterdir():

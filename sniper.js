@@ -58,10 +58,9 @@ function readiness(g,data,runId,now=Date.now()){
 root.SniperEngine={fresh,rate,formulate,assess,dataStale,feedStatus,readiness};
 if(typeof module!=='undefined')module.exports=root.SniperEngine;
 if(typeof document==='undefined')return;
-const section=document.createElement('section');section.id='sniper';section.className='tab';section.hidden=true;
+const section=document.getElementById('sniper')||document.createElement('section');section.id='sniper';section.className='tab';section.hidden=!document.querySelector('nav [data-tab=sniper].active');
 section.innerHTML='<article class="sniper-hero"><span class="eyebrow">THE DARKHORSE PROP DESK</span><h2>SNIPER <em>SAUCE</em><span class="sniper-cross">⌖</span></h2><p>Player props & same-game combinations.</p><div id="sniper-status" role="status">Loading player production…</div></article><label class="sniper-search">Find a matchup<input id="sniper-search" type="search" placeholder="Search a team…"></label><div id="sniper-games"></div>';
 document.querySelector('main footer').before(section);
-const nav=document.querySelector('#mainNavigation');const button=document.createElement('button');button.dataset.tab='sniper';button.textContent='Sniper Sauce';button.onclick=()=>tab('sniper');nav.insertBefore(button,nav.children[2]);
  document.getElementById('sniper-search').addEventListener('input',e=>section.querySelectorAll('.sniper-game').forEach(g=>g.hidden=!g.querySelector('summary').textContent.toLowerCase().includes(e.target.value.toLowerCase())));
 const odds=x=>(x>0?'+':'')+x;
 function render(data){

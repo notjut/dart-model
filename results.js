@@ -56,6 +56,6 @@ const DarkhorseResults = (() => {
     try{const trialResponse=await fetch('upset-research-results.json',{cache:'no-cache'});if(trialResponse.ok&&typeof DarkhorseResearch!=='undefined')mount.insertAdjacentHTML('beforeend',DarkhorseResearch.results(await trialResponse.json()));}catch(error){console.warn('Experiment record unavailable',error);}
     }catch(error){mount.innerHTML='<article><h2>Pick results could not load.</h2><p>Reload to try again. No results are being estimated or substituted.</p></article>';console.error(error);}
   }
-  document.addEventListener('DOMContentLoaded',()=>init().catch(console.error),{once:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>init().catch(console.error),{once:true});else init().catch(console.error);
   return api;
 })();

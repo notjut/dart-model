@@ -1,16 +1,16 @@
 /* Shared, immediately visible ranking badges on every matchup surface. */
 .ranked-name{display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px;vertical-align:middle;max-width:100%;text-align:left}
-.team-ranks{display:flex!important;flex-wrap:wrap;align-items:center;gap:5px;line-height:1.25;letter-spacing:0;text-transform:none;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700}
-.team-ranks .rank-chip{display:inline-flex!important;align-items:center;white-space:nowrap;padding:4px 6px;border-radius:5px;border:1px solid #398b86;background:#10312e;color:#9ff4df;font:700 11px/1.2 Arial,Helvetica,sans-serif!important;letter-spacing:.02em!important;text-transform:none!important;box-shadow:none}
+.team-ranks{display:flex!important;flex-wrap:wrap;align-items:center;gap:5px;line-height:1.25;letter-spacing:0;text-transform:none;font-family:Inter,Arial,sans-serif;font-size:12px;font-weight:700}
+.team-ranks .rank-chip{display:inline-flex!important;align-items:center;white-space:nowrap;padding:4px 6px;border-radius:5px;border:1px solid #398b86;background:#10312e;color:#9ff4df;font:700 12px/1.2 Inter,Arial,sans-serif!important;letter-spacing:.02em!important;text-transform:none!important;box-shadow:none}
 .team-ranks .rank-cfp{background:#332d1d;border-color:#897347;color:#f5d58d}
 .team-ranks .rank-stale,.team-ranks .rank-missing{color:#c4c9c8;background:#252a2a;border-color:#54605d}
-.rank-current{font:600 10px/1.2 Arial,Helvetica,sans-serif!important;color:#b6c9c3;text-transform:uppercase;letter-spacing:.04em}
+.rank-current{font:600 12px/1.2 Inter,Arial,sans-serif!important;color:#b6c9c3;text-transform:uppercase;letter-spacing:.04em}
 .ranked-matchup{display:inline-flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:100%}
-.ranked-vs{font-size:.65em;font-weight:500;color:#aabeb6}
-.ranking-key{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:14px 20px;margin:0 0 24px;background:#0e1c19;border:1px solid #294139;border-radius:10px;color:#d6e3df;font:12px/1.5 Arial,Helvetica,sans-serif}
-.ranking-key>b{color:#74e1c6;font-size:10px;letter-spacing:.12em}.ranking-key a{color:#b2ffeb;text-decoration:underline;text-underline-offset:3px}.rank-date{display:block;color:#9fb6ad;font-size:11px}.ranking-key-note{color:#9fb6ad;font-size:11px}
+.ranked-vs{font-size:12px;font-weight:500;color:#aabeb6}
+.ranking-key{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:14px 20px;margin:0 0 24px;background:#0e1c19;border:1px solid #294139;border-radius:12px;color:#d6e3df;font:12px/1.5 Inter,Arial,sans-serif}
+.ranking-key>b{color:#74e1c6;font-size:12px;letter-spacing:.12em}.ranking-key a{color:#b2ffeb;text-decoration:underline;text-underline-offset:3px}.rank-date{display:block;color:#9fb6ad;font-size:12px}.ranking-key-note{color:#9fb6ad;font-size:12px}
 #matchTitle .ranked-name{font:inherit}.cardteam>span{min-width:0}.score .ranked-name{align-items:center;text-align:center}.score .team-ranks{justify-content:center}
 .sb-card h3 .ranked-name{align-items:center}.sb-opponent .ranked-name{align-items:center}.ticket .ticket-match .ranked-name{font-size:13px}.ticket .ticket-team .team-ranks{margin:3px 0}
-.sniper-teams{flex-wrap:wrap}.sniper-side{display:inline-flex;align-items:center;gap:10px;min-width:0}.sniper-side .ranked-name{font:inherit}
-.historyteam .ranked-name{flex:1}.historyteam .team-ranks{gap:3px}.historyteam .rank-chip{font-size:10px!important;padding:3px 4px}.pr-team .ranked-name{font:inherit}.pr-team h3 .rank-chip{font:700 11px/1.2 Arial,Helvetica,sans-serif!important}.dh-selection .ranked-name{font:inherit}
-@media(max-width:600px){.ranking-key{padding:12px;gap:10px 18px}.ranking-key>b{width:100%}.sniper-game>summary{align-items:flex-start;gap:15px;flex-direction:column}.sniper-teams{align-items:flex-start;flex-direction:column;gap:9px}.sniper-teams .sniper-at{margin-left:46px;font-size:11px}.ranked-matchup{gap:10px}.team-ranks{gap:4px}.ranking-key-note{flex-basis:100%}}
+.sniper-teams{flex-wrap:wrap}.sniper-side{display:inline-flex;align-items:center;gap:12px;min-width:0}.sniper-side .ranked-name{font:inherit}
+.historyteam .ranked-name{flex:1}.historyteam .team-ranks{gap:3px}.historyteam .rank-chip{font-size:12px!important;padding:3px 4px}.pr-team .ranked-name{font:inherit}.pr-team h3 .rank-chip{font:700 12px/1.2 Inter,Arial,sans-serif!important}.dh-selection .ranked-name{font:inherit}
+@media(max-width:600px){.ranking-key{padding:12px;gap:12px 18px}.ranking-key>b{width:100%}.sniper-game>summary{align-items:flex-start;gap:15px;flex-direction:column}.sniper-teams{align-items:flex-start;flex-direction:column;gap:9px}.sniper-teams .sniper-at{margin-left:46px;font-size:12px}.ranked-matchup{gap:12px}.team-ranks{gap:4px}.ranking-key-note{flex-basis:100%}}
