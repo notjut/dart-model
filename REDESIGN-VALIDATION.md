@@ -20,7 +20,7 @@ The betslip remains a research tool. Its storage keys, ticket schema, limits, se
 
 `picks-bootstrap.json` is a generated view of the canonical data, not an independent feed. The existing package step derives it from data.json/model.json. It preserves every forecast's margin, total, uncertainty, contribution and review flag, and retains completed scores needed by saved tickets. All canonical endpoints remain. No model weights, forecasting equations or source data were edited.
 
-History, player facts, upset-history and full research profiles are outside the initial blocking fetch. Research and specialist tools load on demand with loading/error states. Forecast/odds requests start concurrently; started-game data is fetched once. Date formatters are reused, calendar counts are computed once, and the eligible market pool is reused only within a synchronous render so later actions still recheck eligibility.
+History, player facts, upset-history and full research profiles are outside the initial blocking fetch. Research and specialist tools load on demand with loading/error states. Forecast/odds requests start concurrently; started-game data is fetched once. Hidden live-score cards render only when Live opens; ticker/team images are lazy-loaded and use 96px local WebP derivatives. All 138 original team PNGs remain unchanged. Date formatters are reused, calendar counts are computed once, and the eligible market pool is reused only within a synchronous render so later actions still recheck eligibility.
 
 ## Regression results
 
@@ -36,6 +36,7 @@ Local Chrome preview, warm cache, no CPU/network throttling. These are lab obser
 
 | Check | Observed |
 |---|---:|
+| 390×844 uncached-path pregame LCP / CLS | 0.324 s / 0.0022 |
 | 390×844 pregame LCP | 1.140 s |
 | 390×844 pregame CLS before interaction | 0.0021 |
 | 390×844 maximum observed filter/menu event duration | 112 ms |
@@ -48,7 +49,7 @@ Local Chrome preview, warm cache, no CPU/network throttling. These are lab obser
 | Visible text under 12px / controls under 44px on tested picks view | 0 / 0 |
 | Dashboard ink / muted / mint / gold contrast against background | 18.02 / 9.59 / 15.15 / 14.21 : 1 |
 
-Initial JS is 136.2 KB uncompressed; initial CSS is 36.6 KB; all WOFF2 fonts are 136.8 KB. The initial JSON view and quotes total 564.6 KB raw / 62.3 KB gzip; JS is 50.3 KB gzip. The original 845 KB mark is replaced in page display/favicon by a 5.2 KB derivative. Cached transfer measurements cannot establish the cold 1 MB first-screen target. A production cold-cache/throttled audit and real-user INP measurement remain necessary to certify the requested performance budgets; the observed event duration is only a responsiveness proxy. Earlier development runs exceeded responsiveness/shift targets while hot-reloading; the stable final observations above followed removal of duplicate hidden-history rendering and reuse of the date formatter.
+Initial JS is 136.2 KB uncompressed; initial CSS is 36.6 KB; all WOFF2 fonts are 136.8 KB. The initial JSON view and quotes total 564.6 KB raw / 62.3 KB gzip; JS is 50.3 KB gzip. The original 845 KB mark is replaced in page display/favicon by a 5.2 KB derivative. A separate uncached local URL measured 0.882 MB of same-origin resource transfer on the 390px pregame view after logo optimization. The two external live-score JSON responses do not expose Timing-Allow-Origin sizes, so this is not a complete network-byte total. A production cold-cache/throttled audit and real-user INP measurement remain necessary to certify the requested performance budgets; the observed event duration is only a responsiveness proxy. Earlier development runs exceeded responsiveness/shift targets while hot-reloading; the stable final observations above followed removal of duplicate hidden-history rendering and reuse of the date formatter.
 
 ## Screenshots
 
