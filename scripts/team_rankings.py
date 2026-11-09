@@ -1,4 +1,4 @@
-"""Refresh current ESPN FPI and CFP ranks for display, without changing forecasts."""
+"""Refresh current ESPN FPI, AP and CFP ranks without changing forecasts."""
 import datetime as dt
 import json
 import os
@@ -11,6 +11,7 @@ UTC = dt.timezone.utc
 FPI_URL = 'https://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/{season}/powerindex?limit=200'
 CFP_URL = 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/rankings'
 SOURCES = {'fpi': 'https://www.espn.com/college-football/fpi',
+           'ap': 'https://www.espn.com/college-football/rankings',
            'cfp': 'https://www.espn.com/college-football/rankings'}
 TEAM_REF = re.compile(r'^https?://sports\.core\.api\.espn\.com/v2/sports/football/leagues/college-football/seasons/(\d{4})/teams/(\d+)(?:\?[^#]*)?$')
 
@@ -51,21 +52,33 @@ def parse_fpi(payload, season, required, now):
     return {'ranks': ranks, 'publishedAt': dates[0].isoformat()}
 
 
-def parse_cfp(payload, season, required, now):
-    polls = [p for p in payload.get('rankings', []) if p.get('type') == 'cfp' and p.get('season', {}).get('year') == season]
+def parse_poll(payload, season, required, now, kind):
+    polls = [p for p in payload.get('rankings', []) if p.get('type') == kind and p.get('season', {}).get('year') == season]
     if len(polls) != 1:
-        raise ValueError('Current-season CFP poll unavailable; other polls cannot replace it')
+        raise ValueError(f'Current-season {kind.upper()} poll unavailable; other polls cannot replace it')
     poll = polls[0]
     ranks = {}
     for row in poll.get('ranks', []):
         team = str(row.get('team', {}).get('id', ''))
         if not team.isdigit() or team in ranks or team not in required:
-            raise ValueError('CFP team is duplicated or unmapped')
+            raise ValueError(f'{kind.upper()} team is duplicated or unmapped')
         ranks[team] = integer(row['current'], 25)
-    if len(ranks) != 25 or set(ranks.values()) != set(range(1, 26)):
-        raise ValueError('CFP Top 25 is incomplete or duplicated')
+    # AP can publish ties: competition ranking skips the following place.
+    values = sorted(ranks.values())
+    valid = (len(ranks) >= 25 and all(rank == values[i-1] or rank == i+1 for i, rank in enumerate(values))
+             and values[0] == 1) if kind == 'ap' else (len(ranks) == 25 and values == list(range(1, 26)))
+    if not valid:
+        raise ValueError(f'{kind.upper()} Top 25 is incomplete or duplicated')
     return {'ranks': ranks, 'publishedAt': stamp(poll['date'], now).isoformat(),
             'week': poll.get('occurrence', {}).get('number')}
+
+
+def parse_cfp(payload, season, required, now):
+    return parse_poll(payload, season, required, now, 'cfp')
+
+
+def parse_ap(payload, season, required, now):
+    return parse_poll(payload, season, required, now, 'ap')
 
 
 def fetch(url):
@@ -83,10 +96,13 @@ def refresh(data, run_id, previous=None, now=None, fetcher=fetch):
     season = max(int(g['season']) for g in data['games'])
     required = {str(k) for k, t in data['teams'].items() if t['conference'] != 'Non-FBS opponent'}
     result = {'runId': run_id, 'season': season, 'generatedAt': now.isoformat(), 'warnings': []}
-    for kind, url, parser, max_days in [('fpi', FPI_URL.format(season=season), parse_fpi, 7), ('cfp', CFP_URL, parse_cfp, 14)]:
+    responses = {}
+    for kind, url, parser, max_days in [('fpi', FPI_URL.format(season=season), parse_fpi, 7), ('ap', CFP_URL, parse_ap, 14), ('cfp', CFP_URL, parse_cfp, 14)]:
         base = {'sourceUrl': SOURCES[kind], 'dataSourceUrl': url, 'checkedAt': now.isoformat()}
         try:
-            parsed = parser(fetcher(url), season, required, now)
+            if url not in responses:
+                responses[url] = fetcher(url)
+            parsed = parser(responses[url], season, required, now)
             old = now - stamp(parsed['publishedAt'], now) > dt.timedelta(days=max_days)
             result[kind] = {**base, **parsed, 'retrievedAt': now.isoformat(), 'status': 'stale' if old else 'current'}
             if old:
@@ -99,7 +115,7 @@ def refresh(data, run_id, previous=None, now=None, fetcher=fetch):
             result['warnings'].append({'source': kind, 'message': 'Ranking refresh failed: ' + type(error).__name__})
     result['coverage'] = {k: {'status': result[k]['status'], 'teams': len(result[k]['ranks']),
                              'publishedAt': result[k].get('publishedAt'), 'retrievedAt': result[k].get('retrievedAt')}
-                          for k in ('fpi', 'cfp')}
+                          for k in ('fpi', 'ap', 'cfp')}
     return result
 
 

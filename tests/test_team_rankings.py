@@ -18,6 +18,17 @@ def cfp():
         {'type': 'cfp', 'season': {'year': 2026}, 'date': '2026-11-03T08:00Z', 'occurrence': {'number': 10},
          'ranks': [{'current': i, 'team': {'id': str(i)}} for i in range(1, 26)]}]}
 class RankingsTests(unittest.TestCase):
+    def test_ap_is_independent_and_allows_published_ties(self):
+        p = cfp()
+        poll = copy.deepcopy(p['rankings'][1]); poll['type'] = 'ap'
+        p['rankings'][0] = poll
+        poll['ranks'][5]['current'] = 5
+        self.assertEqual(r.parse_ap(p, 2026, REQUIRED, NOW)['ranks']['6'], 5)
+        self.assertEqual(r.parse_cfp(p, 2026, REQUIRED, NOW)['ranks']['6'], 6)
+        poll['ranks'][6]['current'] = 6
+        with self.assertRaises(ValueError): r.parse_ap(p, 2026, REQUIRED, NOW)
+        with self.assertRaises(ValueError): r.parse_ap(cfp(), 2026, REQUIRED, NOW)
+
     def test_published_rank_not_row_order_or_fpi_value(self):
         self.assertEqual(r.parse_fpi(fpi(), 2026, REQUIRED, NOW)['ranks']['1'], 100)
     def test_incomplete_or_duplicate_fpi_rejected(self):

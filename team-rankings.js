@@ -22,8 +22,18 @@ function badges(team,historical=false,data=snapshot,now=Date.now()){
  return `<span class="team-ranks" aria-label="${historical?'Current team rankings, not game-day rankings':'Team rankings'}">${historical?'<span class="rank-current">Current</span>':''}${chips.join('')}</span>`;
 }
 function text(team,data=snapshot){const labels=['fpi','cfp'].flatMap(k=>{const rank=data[k]?.ranks?.[String(team)],s=state(data[k],k);return Number.isInteger(rank)&&s!=='unavailable'?[`${k.toUpperCase()} #${rank}${s==='stale'?' (older)':''}`]:k==='fpi'?['FPI unavailable']:[];});return labels.join(' · ');}
-function legend(data=snapshot){return `<div class="ranking-key"><b>THE RANKINGS</b><span><a href="https://www.espn.com/college-football/fpi" target="_blank" rel="noreferrer">FPI</a> = ESPN’s team-strength rank <span class="rank-date">${escape(date(data.fpi?.publishedAt))}${state(data.fpi)!=='current'?' · '+state(data.fpi):''}</span></span><span><a href="https://www.espn.com/college-football/rankings" target="_blank" rel="noreferrer">CFP</a> = playoff committee’s Top 25 <span class="rank-date">${escape(date(data.cfp?.publishedAt))}${state(data.cfp,'cfp')!=='current'?' · '+state(data.cfp,'cfp'):''}</span></span><span class="ranking-key-note">Lower is better. CFP badge appears only for ranked teams.${state(data.cfp,'cfp')==='unavailable'?' CFP source unavailable.':''}</span></div>`;}
-const api={badges,text,legend,state,get data(){return snapshot;}};root.TeamRankings=api;
+function cardRanks(team,historical=false,data=snapshot,now=Date.now()){
+ const rows=['fpi','ap','cfp'].map(kind=>{
+  const source=data[kind],status=state(source,kind,now),rank=source?.ranks?.[String(team)],label=kind.toUpperCase();
+  const available=status!=='unavailable',value=available&&Number.isInteger(rank)?'#'+rank:available&&kind!=='fpi'?'NR':'—';
+  const detail=!available?'Ranking unavailable':value==='NR'?'Not ranked in the Top 25':'Rank '+rank;
+  const title=label+': '+detail+(status==='stale'?'. Older snapshot':'')+(historical?'. Current ranking, not game-day ranking':'');
+  return `<span title="${escape(title)}" aria-label="${escape(title)}"><small>${label}</small><b>${value}${status==='stale'?'<sup>*</sup>':''}</b></span>`;
+ });
+ return `<div class="gd-school-ranks" aria-label="${historical?'Current rankings':'Team rankings'}">${rows.join('')}</div>`;
+}
+function legend(data=snapshot){return `<div class="ranking-key"><b>THE RANKINGS</b><span><a href="https://www.espn.com/college-football/fpi" target="_blank" rel="noreferrer">FPI</a> = ESPN’s team-strength rank <span class="rank-date">${escape(date(data.fpi?.publishedAt))}${state(data.fpi)!=='current'?' · '+state(data.fpi):''}</span></span><span><a href="https://www.espn.com/college-football/rankings" target="_blank" rel="noreferrer">CFP</a> = playoff committee’s Top 25 <span class="rank-date">${escape(date(data.cfp?.publishedAt))}${state(data.cfp,'cfp')!=='current'?' · '+state(data.cfp,'cfp'):''}</span></span><span><a href="https://www.espn.com/college-football/rankings" target="_blank" rel="noreferrer">AP</a> = Associated Press Top 25 <span class="rank-date">${escape(date(data.ap?.publishedAt))}${state(data.ap,'ap')!=='current'?' · '+state(data.ap,'ap'):''}</span></span><span class="ranking-key-note">NR = unranked. — = unavailable. * = older ranking snapshot. Lower is better. CFP badge appears only for ranked teams.${state(data.cfp,'cfp')==='unavailable'?' CFP source unavailable.':''}</span></div>`;}
+const api={badges,text,legend,cardRanks,state,get data(){return snapshot;}};root.TeamRankings=api;
 if(typeof module!=='undefined')module.exports=api;
 if(typeof document==='undefined')return;
 api.ready=(async()=>{try{const r=await fetch('team-rankings.json',{cache:'no-cache',signal:AbortSignal.timeout(12000)});if(!r.ok)throw Error('Rankings unavailable');const value=await r.json();if(!value.runId||!value.coverage)throw Error('Invalid ranking snapshot');snapshot=value;}catch(error){console.warn('Team rankings unavailable:',error.message);}return snapshot;})();
