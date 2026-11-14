@@ -22,3 +22,5 @@ require('./test_opponent_ui.cjs');
 require('./test_started_games.cjs');
 
 require('./test_gameday.cjs');
+
+require('./test_live_record.cjs');

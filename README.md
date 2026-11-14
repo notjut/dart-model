@@ -134,3 +134,8 @@ Tap posted moneyline, spread or over/under odds to add them to the persistent be
 
 ### Live scoreboard
 `live-scores.js` retrieves the public college football scoreboard on load, every 600,000 milliseconds while visible, and when a stale tab becomes visible. Today’s games plus prior-day games still in progress appear in the ticker. Final/live scores are never forecast scores. A failed refresh preserves received scores with a delayed label. No API keys, model weights, training records or existing daily updater schedule are changed. Spread and total prices are extracted from the same saved sportsbook offer during the existing daily refresh; missing prices remain unavailable. Mixed-market tickets show payouts without inventing a total/spread hit probability.
+
+
+### Current-week live pick standings
+
+`live-record.js` displays moneyline, spread and total standings on Picks and Live. The big W–L record combines settled finals with provisional live standings, with separate final/live subtotals. Only forecasts and spread/total lines saved before kickoff qualify. Missing or post-kickoff inputs never count as wins. The Eastern week runs Monday–Sunday. Scores use the existing ten-minute scoreboard refresh; delayed feeds are labeled. ML follows the current leader, spreads compare the current margin with the saved line, and totals extrapolate scoring per elapsed regulation minute to 60 minutes after three minutes have elapsed. Once a total is exceeded, its over/under status cannot flip back. Overtime below the total has no pacing estimate. Even/push results stay outside W–L. These provisional counts never settle saved tickets or change model forecasts. Checks: `node tests/test_live_record.cjs` and the existing freshness suite.

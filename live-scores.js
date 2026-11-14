@@ -7,7 +7,7 @@ function parse(payload){
  return payload.events.flatMap(e=>{const c=e.competitions?.[0],teams=c?.competitors||[],h=teams.find(t=>t.homeAway==='home'),a=teams.find(t=>t.homeAway==='away'),s=c?.status||e.status,t=s?.type;
   if(!h?.team||!a?.team||!t||!Number.isFinite(Date.parse(e.date)))return [];
   const score=x=>{if(x===null||x===undefined||x==='')return null;const n=Number(typeof x==='object'?x.value:x);return Number.isFinite(n)&&n>=0?n:null;};
-  return [{id:String(e.id),date:e.date,home:String(h.team.id),away:String(a.team.id),homeName:h.team.displayName,awayName:a.team.displayName,homeAbbr:h.team.abbreviation,awayAbbr:a.team.abbreviation,homeLogo:h.team.logo||h.team.logos?.[0]?.href,awayLogo:a.team.logo||a.team.logos?.[0]?.href,homeScore:t.state==='pre'?null:score(h.score),awayScore:t.state==='pre'?null:score(a.score),state:t.state,status:t.name,detail:t.shortDetail||t.detail||'',done:!!t.completed,timeValid:c.timeValid!==false}];
+  return [{id:String(e.id),date:e.date,home:String(h.team.id),away:String(a.team.id),homeName:h.team.displayName,awayName:a.team.displayName,homeAbbr:h.team.abbreviation,awayAbbr:a.team.abbreviation,homeLogo:h.team.logo||h.team.logos?.[0]?.href,awayLogo:a.team.logo||a.team.logos?.[0]?.href,homeScore:t.state==='pre'?null:score(h.score),awayScore:t.state==='pre'?null:score(a.score),state:t.state,status:t.name,detail:t.shortDetail||t.detail||'',period:Number.isInteger(s.period)?s.period:null,clock:typeof s.clock==='number'&&Number.isFinite(s.clock)?s.clock:null,displayClock:s.displayClock||'',done:!!t.completed,timeValid:c.timeValid!==false}];
  });
 }
 let games=[],retrievedAt=null,failed=false,busy=false,callback=()=>{},timer;
