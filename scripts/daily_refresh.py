@@ -307,6 +307,7 @@ def run():
     model['latestReplay'] = replay
     model['refreshRunId'] = run_id
     write(work/'model.json', model)
+    execute('sims_data.py')
     execute('team_rankings.py')
     rankings = read(work/'team-rankings.json')
     execute('matchup_context.py', '--data-file', 'data.json')
@@ -358,7 +359,7 @@ def run():
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))
     # No repository data is replaced until the release passes the checks above.
-    publish = ['started-games.json', 'team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
+    publish = ['sims-data.json', 'started-games.json', 'team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
                'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json',
                'upset-metric-history.json', 'upset-research-results.json']
