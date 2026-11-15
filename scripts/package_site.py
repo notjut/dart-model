@@ -16,7 +16,7 @@ for child in out.iterdir():
         child.unlink()
 for path in root.iterdir():
     if path.is_file() and (path.suffix in {'.html', '.css', '.js', '.json', '.zip', '.ico', '.txt'} or path.name == '.nojekyll'):
-        if path.name not in {'requirements.txt', 'refresh-failure.json', 'darkhorse-release.json'}:
+        if path.name not in {'requirements.txt', 'refresh-failure.json', 'darkhorse-release.json', 'dh20-vault.json', 'golden-vault.json'}:
             shutil.copy2(path, out/path.name)
 for name in ['assets', 'forecast-archive']:
     if (root/name).exists():

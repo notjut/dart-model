@@ -1,10 +1,24 @@
-(function(root){'use strict';
-const bytes=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-async function decrypt(v,p){if(v.version!==1||v.kdf!=='PBKDF2-SHA256'||!Number.isInteger(v.iterations)||v.iterations<600000||v.iterations>2000000)throw Error('Unsupported vault');const m=await root.crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveKey']);const k=await root.crypto.subtle.deriveKey({name:'PBKDF2',salt:bytes(v.salt),iterations:v.iterations,hash:'SHA-256'},m,{name:'AES-GCM',length:256},false,['decrypt']);return JSON.parse(new TextDecoder().decode(await root.crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(v.iv)},k,bytes(v.ciphertext))));}
-root.DH20Gate={decrypt};if(typeof module!=='undefined')module.exports={decrypt};if(typeof document==='undefined')return;
-const scene=root.DH20Scene?.mount(document.getElementById('d2GateScene'),{level:.08});document.querySelectorAll('[data-orbit]').forEach(b=>b.onclick=()=>scene?.rotate(b.dataset.orbit));const form=document.getElementById('d2Form'),password=document.getElementById('d2Password'),message=document.getElementById('d2Message'),unlock=document.getElementById('d2Unlock'),show=document.getElementById('d2Show');
-show.onclick=()=>{const on=password.type==='password';password.type=on?'text':'password';show.textContent=on?'Hide':'Show';show.setAttribute('aria-pressed',String(on));show.setAttribute('aria-label',on?'Hide password':'Show password');};
-form.addEventListener('submit',async e=>{e.preventDefault();if(unlock.disabled)return;unlock.disabled=true;form.setAttribute('aria-busy','true');message.textContent='Decrypting the control room…';let payload;
-try{const response=await fetch('dh20-vault.json?v=20261115-a',{cache:'no-store'});if(!response.ok)throw Error('Unavailable');try{payload=await decrypt(await response.json(),password.value);}catch(err){password.value='';message.textContent=err.name==='OperationError'?'Password not recognized. Try again.':'Unable to unlock. Reload and try again.';password.focus();return;}if(payload.schema!==1||typeof payload.module!=='string')throw Error('Invalid payload');const url=URL.createObjectURL(new Blob([payload.module],{type:'text/javascript'}));try{const app=await import(url);const target=document.getElementById('d2Content');target.hidden=false;document.getElementById('d2Gate').hidden=true;password.value='';await app.mount(target,payload.study);scene?.dispose();document.getElementById('d2Gate').remove();target.querySelector('h1')?.focus();}finally{URL.revokeObjectURL(url);}}
-catch(err){const gate=document.getElementById('d2Gate');if(gate)gate.hidden=false;const target=document.getElementById('d2Content');target.hidden=true;target.replaceChildren();message.textContent='DH2.0 is temporarily unavailable. Please try again.';}finally{unlock.disabled=false;form.removeAttribute('aria-busy');payload=null;}});
-})(globalThis);
+/* Public system entry point. Kept at its existing URL for older page links. */
+(async function(){
+'use strict';
+const target=document.getElementById('d2Content');
+if(!target)return;
+document.getElementById('d2Gate')?.remove();
+target.hidden=false;
+target.setAttribute('aria-busy','true');
+try{
+ const [app,study]=await Promise.all([
+  import('./dh20.js?v=20261115-public1'),
+  fetch('dh20-study.json?v=20261115-public1').then(r=>{if(!r.ok)throw Error('Study unavailable');return r.json();})
+ ]);
+ await app.mount(target,study);
+}catch(error){
+ target.replaceChildren();
+ const title=document.createElement('h1'),message=document.createElement('p'),retry=document.createElement('button');
+ title.textContent='DH2.0 — The Thermostat';
+ message.textContent='System research is temporarily unavailable. Please try again.';
+ message.setAttribute('role','alert');
+ retry.type='button';retry.textContent='Try again';retry.onclick=()=>location.reload();
+ target.append(title,message,retry);
+}finally{target.removeAttribute('aria-busy');}
+})();
