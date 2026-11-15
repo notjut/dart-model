@@ -182,8 +182,9 @@ const Gameday=(()=>{
  const ticketNav=nav.querySelector('[data-tab="builder"]');if(ticketNav)menu.append(ticketNav);
  for(const id of ['slate','live','parlays','test']){const b=nav.querySelector(`[data-tab="${id}"]`);if(b){b.textContent={slate:'Picks',live:'Live',parlays:'Parlays',test:'Results'}[id];nav.insertBefore(b,more);}}
  const simsNav=document.createElement('button');simsNav.textContent='Sims';simsNav.onclick=()=>{location.href='sims.html';};nav.insertBefore(simsNav,nav.querySelector('[data-tab=live]'));
+ const goldenNav=document.createElement('button');goldenNav.textContent='The Golden System ✦';goldenNav.className='gd-golden-nav';goldenNav.onclick=()=>{location.href='golden.html';};nav.insertBefore(goldenNav,nav.querySelector('[data-tab=live]'));
  nav.addEventListener('keydown',e=>{if(e.key==='Escape'){more.open=false;more.querySelector('summary').focus();}});
- const route=()=>{const id=location.hash.match(/^#matchup\/([\w-]+)$/)?.[1];if(id)open(id);};window.addEventListener('hashchange',route);
+ const route=()=>{const id=location.hash.match(/^#matchup\/([\w-]+)$/)?.[1];if(id){open(id);return;}const target={picks:'slate',live:'live',parlays:'parlays',test:'test',results:'test',builder:'builder'}[location.hash.slice(1)];if(target)tab(target);};window.addEventListener('hashchange',route);
  document.querySelectorAll('#live h1,#builder h1').forEach(h=>{const n=document.createElement('h2');n.innerHTML=h.innerHTML;h.replaceWith(n);});
  $('gdHome').textContent='Saved tickets';$('gdHome').onclick=()=>tab('builder');
  document.addEventListener('click',e=>{const report=e.target.closest('[data-report]');if(report){e.preventDefault();open(report.dataset.report);}const next=e.target.closest('[data-next-day]');if(next){selectedDay=next.dataset.nextDay;render();$('gdDayTitle').scrollIntoView({block:'start'});}if(e.target.closest('[data-show-results]'))tab('test');if(e.target.closest('[data-clear-filters]')){$('search').value='';$('conference').value='all';$('gdTier').value='all';render();}});

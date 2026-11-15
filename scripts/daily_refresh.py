@@ -346,6 +346,7 @@ def run():
     write(work/'daily-results.json', grade_snapshots(snaps, data))
     write(work/'started-games.json', build_started_games(snaps, data, read(work/'game-details.json'), run_id))
     write(work/'upset-research-results.json', grade_trial(snaps, data))
+    execute('situational_data.py')
     context = read(work/'matchup-context.json')
     status = {'runId': run_id, 'status': 'validated', 'dataAsOf': data['asOf'],
               'lastSuccessfulRefresh': dt.datetime.now(UTC).isoformat(), 'staleAfterHours': 30,
@@ -359,7 +360,7 @@ def run():
     write(work/'refresh-status.json', status)
     validate_forecasts(data, model, dt.datetime.now(UTC))
     # No repository data is replaced until the release passes the checks above.
-    publish = ['sims-data.json', 'started-games.json', 'team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
+    publish = ['system-data.json', 'research-snapshots.json', 'sims-data.json', 'started-games.json', 'team-rankings.json', 'data.json', 'model.json', 'game-details.json', 'history.json', 'current-data.json',
                'current-game-details.json', 'latest-results.json', 'matchup-context.json', 'availability.json',
                'matchup-environment.json', 'coach-change-history.json', 'context-history-inputs.json', 'parlay-odds.json', 'sniper-props.json', 'daily-results.json', 'refresh-status.json',
                'upset-metric-history.json', 'upset-research-results.json']
