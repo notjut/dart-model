@@ -182,6 +182,7 @@ const Gameday=(()=>{
  const ticketNav=nav.querySelector('[data-tab="builder"]');if(ticketNav)menu.append(ticketNav);
  for(const id of ['slate','live','parlays','test']){const b=nav.querySelector(`[data-tab="${id}"]`);if(b){b.textContent={slate:'Picks',live:'Live',parlays:'Parlays',test:'Results'}[id];nav.insertBefore(b,more);}}
  const simsNav=document.createElement('button');simsNav.textContent='Sims';simsNav.onclick=()=>{location.href='sims.html';};nav.insertBefore(simsNav,nav.querySelector('[data-tab=live]'));
+ const dh20Nav=document.createElement('button');dh20Nav.textContent='DH2.0';dh20Nav.className='gd-dh20-nav';dh20Nav.onclick=()=>{location.href='dh20.html';};nav.insertBefore(dh20Nav,simsNav);
  const goldenNav=document.createElement('button');goldenNav.textContent='The Golden System ✦';goldenNav.className='gd-golden-nav';goldenNav.onclick=()=>{location.href='golden.html';};nav.insertBefore(goldenNav,nav.querySelector('[data-tab=live]'));
  nav.addEventListener('keydown',e=>{if(e.key==='Escape'){more.open=false;more.querySelector('summary').focus();}});
  const route=()=>{const id=location.hash.match(/^#matchup\/([\w-]+)$/)?.[1];if(id){open(id);return;}const target={picks:'slate',live:'live',parlays:'parlays',test:'test',results:'test',builder:'builder'}[location.hash.slice(1)];if(target)tab(target);};window.addEventListener('hashchange',route);

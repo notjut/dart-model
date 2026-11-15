@@ -34,7 +34,7 @@ def build(schedules,betting,metadata,data,quotes,started,now,run_id):
   if r.get('season_type')!='regular' or not truth(r.get('fbs_participant')):continue
   gid=str(r['game_id']);q=markets.get(gid,{});line=number(q.get('home_team_spread')) if truth(q.get('game_spread_available')) and q.get('odds_source')!='default' else None
   complete=truth(r.get('completed')) and r.get('status')=='STATUS_FINAL'
-  games[gid]={'id':gid,'season':int(r['season']),'date':r['start_date'],'home':str(r['home_id']),'away':str(r['away_id']),'homeScore':number(r.get('home_points')) if complete else None,'awayScore':number(r.get('away_points')) if complete else None,'done':complete,'status':r.get('status'),'neutral':truth(r.get('neutral_site')),'venueId':r.get('venue_id'),'venue':r.get('venue'),'fbs':truth(r.get('fbs_game')),'homeSpread':line,'spreadBasis':'archived sportsbook close' if line is not None else None,'quote':None}
+  games[gid]={'id':gid,'season':int(r['season']),'date':r['start_date'],'home':str(r['home_id']),'away':str(r['away_id']),'homeRank':number(r.get('home_rank')),'awayRank':number(r.get('away_rank')),'homeScore':number(r.get('home_points')) if complete else None,'awayScore':number(r.get('away_points')) if complete else None,'done':complete,'status':r.get('status'),'neutral':truth(r.get('neutral_site')),'venueId':r.get('venue_id'),'venue':r.get('venue'),'fbs':truth(r.get('fbs_game')),'homeSpread':line,'spreadBasis':'archived sportsbook close' if line is not None else None,'quote':None}
  # Fresh site scores and schedule status take precedence; odds retain explicit provenance.
  for g in data.get('games',[]):
   gid=str(g['id']);r=games.get(gid)
@@ -72,7 +72,7 @@ def build(schedules,betting,metadata,data,quotes,started,now,run_id):
   # Freeze the whole situation before kickoff for all eligible games, not chosen winners.
   if now-stamp(q['retrievedAt'])>dt.timedelta(hours=30):continue
   recent={side:[v for v in histories.get(g[side],[]) if stamp(v['date'])<stamp(g['date'])][-5:] for side in ['home','away']}
-  snapshots.append({'gameId':g['id'],'capturedAt':now.isoformat(),'kickoff':g['date'],'game':dict(g),'teams':{s:teams.get(g[s],{}) for s in ['home','away']},'recent':recent,'quote':dict(q)})
+  snapshots.append({'gameId':g['id'],'capturedAt':now.isoformat(),'kickoff':g['date'],'game':dict(g),'teams':{s:teams.get(g[s],{}) for s in ['home','away']},'recent':recent,'pending':{side:[v for v in games.values() if g[side] in [v['home'],v['away']] and stamp(v['date'])<stamp(g['date']) and not v['done'] and 'CANCEL' not in str(v['status'])] for side in ['home','away']},'quote':dict(q)})
  return {'schemaVersion':1,'status':'ready','runId':run_id,'generatedAt':now.isoformat(),'season':now.year,'teams':teams,'games':sorted(games.values(),key=lambda g:g['date']),'snapshots':snapshots}
 
 def merge_archive(previous,snapshots):

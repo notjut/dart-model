@@ -142,3 +142,6 @@ Tap posted moneyline, spread or over/under odds to add them to the persistent be
 
 
 Private research access is available in the Golden System section. Its content is shipped as an AES-GCM encrypted module; the shared password is not stored in public source. This is client-side encrypted access on static hosting, not account-based authorization or a payment wall. Generic situational data and immutable pregame context snapshots are built by the existing daily refresh. Historical research and results tracked after launch are displayed separately.
+
+
+DH2.0 adds an encrypted system-research preview and a local WebGL Thermostat. The plotted quantity is a labeled historical cover rate, never a game probability. Every system exposes earlier-season results and its separate post-launch record. The existing generic research collector supplies source-era ranks and frozen pregame situations; no forecast weights or betting/ticket logic changes. No subscription checkout or account-based payment authorization is installed.
