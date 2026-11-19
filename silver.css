@@ -1,0 +1,59 @@
+/* The light stage is separate from the dark data surfaces. Keep team and market
+   colors scoped to the cards they were designed for. */
+:root {
+  --silver-ink:#172023; --silver-copy:#364549; --silver-accent:#075546;
+  --silver-panel:#10191b;
+  --silver-depth:inset 0 1px 0 #ffffff24, 0 1px 0 #ffffffc9,
+    0 3px 5px #17212622, 0 11px 28px -14px #182c31af;
+}
+html {background:#dce0e1}
+body, body.gameday {
+  min-height:100vh;
+  background-color:#e0e3e4;
+  background-image:
+    radial-gradient(ellipse at 82% 7%,#a9ffe547,transparent 42%),
+    linear-gradient(124deg,transparent 29%,#ffffff96 40%,transparent 54%),
+    linear-gradient(147deg,#fafbfb 4%,#d8dcde 34%,#f4f5f5 57%,#cbd1d3 80%,#e8ebec);
+  background-size:100% 100vh; background-attachment:fixed;
+}
+body > header,body.gameday .darkhorse-header {
+  background:transparent;color:var(--silver-ink);
+}
+body > header :is(.dh-brand,.d2-brand,.gs-brand,b,strong) {color:var(--silver-ink)}
+body > header :is(.brand-lockup,.d2-brand,.gs-brand) small {color:var(--silver-copy)}
+body > header :is(i,.brand-lockup i,.d2-brand i,.gs-brand i) {color:var(--silver-accent)}
+body > header :is(.d2-back,.gs-home),body.sim-silver > header a {
+  color:var(--silver-accent);border-color:#697976
+}
+body > header :is(button:focus-visible,a:focus-visible),
+.gd-filters :focus-visible,.gd-calendar :focus-visible {outline:3px solid var(--silver-accent);outline-offset:2px}
+.gd-ticker-label,.gameday .gd-score-empty {color:var(--silver-copy)}
+.gameday #mainNavigation,.gs-nav,.d2-nav {
+  background-color:#10191b;box-shadow:var(--silver-depth)
+}
+.gameday .gd-feature-heading h1,.gd-board-head h2,.gd-grid-head h2,
+body #loading,.sim-silver main>h1 {color:var(--silver-ink)}
+.gameday .gd-feature-heading>span,.gameday .gd-grid-head>span,
+.gameday #gdQuoteNote,.gameday .gd-filters label,.sim-silver main>p {color:var(--silver-copy)}
+.gd-feature-heading .eyebrow,.gd-board-head h2 span,.sim-silver main>.tag {color:var(--silver-accent)}
+.gameday :is(.gd-feature-card,.gd-feature-empty,.gd-card,.gd-empty,.gd-lens,.wr-panel,.sb-section,.refresh-banner.stale),
+.sim-silver .panel,.gameday main>.tab:not(#slate),
+#d2Content,#goldenContent,.gameday .brand-footer {
+  background-color:var(--silver-panel);color:var(--ink);
+  box-shadow:var(--silver-depth)
+}
+.gameday .gd-filters :is(input,select),.gameday .gd-tick {background-color:var(--bg);color:var(--ink)}
+.gameday main>.tab:not(#slate),#d2Content,#goldenContent {
+  padding:clamp(12px,1.8vw,26px);border-radius:16px
+}
+.gameday .brand-footer {padding:18px;border-radius:12px}
+body:not(.gameday)>footer {color:var(--silver-copy);border-color:#82908f}
+@media (max-width:650px) {
+  /* The diagonal sheen is static on touch devices. */
+  body,body.gameday {background-attachment:scroll;background-size:100% 1100px;background-repeat:no-repeat}
+  #d2Content,#goldenContent {margin-inline:-5px;padding:10px}
+}
+@media (forced-colors:active) {
+  body,body.gameday {background:Canvas}
+  :focus-visible {outline:2px solid Highlight!important}
+}
